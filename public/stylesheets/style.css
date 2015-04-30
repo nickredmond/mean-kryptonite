@@ -1,0 +1,14 @@
+body {
+  padding: 50px;
+  font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+  min-width: 330px;
+}
+
+a {
+  color: #00B7FF;
+}
+
+#homeStoryImage {
+	max-width: 100%;
+	height: auto;
+}

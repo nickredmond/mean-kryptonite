@@ -1,7 +1,7 @@
 body {
   padding: 50px;
   font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
-  min-width: 330px;
+  min-width: 400px;
 }
 
 a {
@@ -11,4 +11,30 @@ a {
 #homeStoryImage {
 	max-width: 100%;
 	height: auto;
+}
+
+#leftNav {
+	/* Stupid FrontRunner Wifi... verify that I don't need this */
+	/*margin-top: 15px;*/
+}
+
+.signupButton {
+	margin-top: 10px;
+}
+
+.signup-control {
+	margin-top: 10px;
+}
+
+#deathToll {
+	text-align: center;
+}
+
+.datepicker {
+	margin-top: 0;
+}
+
+.errorMessage {
+	clear: both;
+	padding-top: 5px;
 }

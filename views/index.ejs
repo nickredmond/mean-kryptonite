@@ -41,9 +41,9 @@
         <h1 style="margin-top: 0;">Nicotines Kryptonite<br /><small>Helping you help yourself</small></h1>
       </div>
       <div id="indexTopStory" class="jumbotron">
-        <img id="homeStoryImage" ng-src="/images/{{ homeStoryImage }}" id="homeStoryImage" class="img-rounded" alt="{{ homeStoryImage }}" />
+        <img id="homeStoryImage" ng-src="{{ homeStoryImageUri }}" id="homeStoryImage" class="img-rounded" alt="{{ homeStoryImageUri }}" />
         <h1>{{ homeStoryTitle }}</h1>
-        <p>{{ homeStorySummary | truncate:true:100:' ...' }}&nbsp;<a href="" ng-click="">Read More ></a></p>
+        <p>{{ homeStorySummary | truncate:true:100:' ...' }}&nbsp;<a ng-href="#{{readMoreURL}}">Read More ></a></p>
       </div>
       <div id="deathToll" class="alert alert-info">
         <h2>{{ deathToll }}</h2>
@@ -161,6 +161,17 @@
             </div>
           </div>
       </form>
+    </script>
+    <script type="text/ng-template" id="/viewStory.html">
+      <div class="page-header pageHeader">
+        <h1>{{ story.title }}</h1>
+      </div>
+      <div id="storyImageDiv">
+        <img id="storyImage" ng-src="{{story.imageUri}}" class="img-rounded" />
+      </div>
+      <p id="storySummary" class="text-muted"><em>{{ story.summary }}</em></p>
+      <hr color="#aaa" noshade>
+      <div ng-include src="storyText"></div>
     </script>
   </body>
 </html>

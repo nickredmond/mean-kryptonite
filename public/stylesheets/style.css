@@ -42,6 +42,28 @@ a {
 	text-align: center;
 }
 
-/*#indexTopStory {
-	padding: 0 5% 0 5%;
-}*/
+#indexTopStory {
+	text-align: center;
+}
+
+#storyImageDiv {
+	text-align: center;
+}
+
+#storyImage {
+	max-width: 100%;
+}
+
+#storySummary {
+	margin-top: 10px;
+}
+
+.pageHeader {
+	padding-top: 0;
+	margin-top: 0;
+}
+
+.pageHeader h1 {
+	padding-top: 0;
+	margin-top: 0;
+}

@@ -92,17 +92,12 @@ app.controller('HomeCtrl', [
 	'stories',
 	'signup',
 	function($scope, $interval, stories, signup){
-		// TODO: get these from the server
-		$scope.homeStoryImage = "helloworld.jpg";
-		$scope.homeStoryTitle = "Hello, World!";
-		$scope.homeStorySummary = 
-			"The origin of 'Hello, World!' came from Brian Kernighan. He wrote the first 'Hello, World!' " +
-			"program as part of the documentation for the BCPL programming language developed by Martin Richards.";
 		$scope.deathToll = 0;
-
-		$scope.retrieveTopStory = function(){
-			return stories.retrieveTopStory();
-		};
+		var topStory = stories.topStory;
+		$scope.homeStoryImageUri = topStory.imageUri;
+		$scope.homeStoryTitle = topStory.title;
+		$scope.homeStorySummary = topStory.summary;
+		$scope.readMoreURL = "/stories/" + topStory._id;
 
 		$scope.numberWithCommas = function(x) {
 		    return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
@@ -183,14 +178,32 @@ app.controller('NavCtrl', [
 	}
 ]);
 
+app.controller('StoriesCtrl', [
+	'$scope',
+	'$sce',
+	'story',
+	function($scope, $sce, story){
+		$scope.story = story;
+		$scope.storyText = $sce.trustAsResourceUrl(story.storyUri);
+	}
+]);
+
 app.factory('stories', [
 	'$http',
 	function($http){
-		var service = {};
+		var service = {
+			topStory: {}
+		};
 
 		service.retrieveTopStory = function(){
-			// TODO
-			return null;
+			return $http.get('/topStory').success(function(data){
+				angular.copy(data.story, service.topStory);
+			});
+		};
+		service.get = function(id){
+			return $http.get('/stories/' + id).then(function(response){
+				return response.data;
+			});
 		};
 
 		return service;
@@ -261,13 +274,27 @@ app.config([
 		$stateProvider.state('home', {
 			url: '/home',
 			templateUrl: '/home.html',
-			controller: 'HomeCtrl'
+			controller: 'HomeCtrl',
+			resolve: {
+				storyPromise: ['stories', function(stories){
+					return stories.retrieveTopStory();
+				}]
+			}
 		});
-
 		$stateProvider.state('signup', {
 			url: '/signup',
 			templateUrl: '/signup.html',
 			controller: 'SignupCtrl'
+		});
+		$stateProvider.state('viewStory', {
+			url: '/stories/{id}',
+			templateUrl: '/viewStory.html',
+			controller: 'StoriesCtrl',
+			resolve: {
+				story: ['$stateParams', 'stories', function($stateParams, stories){
+					return stories.get($stateParams.id);
+				}]
+			}
 		});
 
 		$urlRouterProvider.otherwise('home');

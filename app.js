@@ -8,6 +8,7 @@ var bodyParser = require('body-parser');
 var mongoose = require('mongoose');
 var passport = require('passport');
 require('./models/Users');
+require('./models/Stories');
 require('./config/passport');
 
 var routes = require('./routes/index');
@@ -70,3 +71,5 @@ mongoose.connect('mongodb://heroku_app36401245:qahtvfobpu504bc1hk77af091t@ds0355
     console.log(err);
   }
 });
+
+var db = mongoose.connection;

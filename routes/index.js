@@ -12,6 +12,8 @@ router.get('/', function(req, res, next) {
 module.exports = router;
 
 var User = mongoose.model('User');
+var Story = mongoose.model('Story');
+//Story.remove({});
 
 var auth = jwt({secret: 'SECRET', userProperty: 'payload'});
 
@@ -43,4 +45,44 @@ router.post('/register', function(request, response, next){
 		if (err) { return next(err); }
 		return response.json({token: user.generateJWT()});
 	});
+});
+
+router.param('story', function(request, response, next, id){
+	var query = Story.findById(id);
+
+	query.exec(function(err, story){
+		if (err) { return next(err); }
+		if(!story) { return next(new Error('can\'t find story')); }
+
+		request.story = story;
+		return next();
+	});
+});
+
+//--- DEV URL - COMMENT OUT WHEN NOT IN USE ---//
+// router.post('/newStory', function(request, response, next){
+// 	// console.log("this is a request: " + request.body.story);
+// 	Story.create({title: request.body.title,
+// 				  summary: request.body.summary,
+// 				  imageUri: request.body.imageUri,
+// 				  storyUri: request.body.storyUri,
+// 				  isTopStory: request.body.isTopStory
+// 				 }, 
+// 		function(err, story){
+// 			if (err) { return next(err); }
+// 			response.json({story: story});
+// 	});	
+// });
+
+router.get('/topStory', function(request, response, next){
+	Story.findOne({'isTopStory': true})
+		.limit(1)
+		.exec(function(err, story){
+			if (err) { return next(err); }
+			return response.json({story: story});
+		});
+});
+
+router.get('/stories/:story', function(request, response){
+	response.json(request.story);
 });

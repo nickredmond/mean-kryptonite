@@ -1,6 +1,6 @@
 {
   "name": "nicotines-kryptonite",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "private": true,
   "scripts": {
     "start": "node ./bin/www"
@@ -14,10 +14,14 @@
     "express": "~4.12.2",
     "express-jwt": "^3.0.0",
     "jsonwebtoken": "^5.0.0",
+    "mongodb": "~2.0.27",
     "mongoose": "~4.0.2",
     "morgan": "~1.5.1",
     "passport": "~0.2.1",
     "passport-local": "~1.0.0",
     "serve-favicon": "~2.2.0"
+  },
+  "engines": {
+    "node": "0.12.2"
   }
 }

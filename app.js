@@ -64,5 +64,5 @@ app.use(function(err, req, res, next) {
 
 
 module.exports = app;
-
-mongoose.connect('mongodb://localhost/kryptonite');
+//mongodb://localhost/kryptonite
+mongoose.connect('mongodb://heroku_app36401245:qahtvfobpu504bc1hk77af091t@ds035557.mongolab.com:35557/heroku_app36401245');

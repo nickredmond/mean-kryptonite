@@ -9,7 +9,7 @@ a {
 }
 
 #homeStoryImage {
-	max-width: 100%;
+	max-width: 95%;
 	height: auto;
 }
 
@@ -35,6 +35,13 @@ a {
 }
 
 .errorMessage {
-	clear: both;
 	padding-top: 5px;
 }
+
+#registrationErrorsDiv {
+	text-align: center;
+}
+
+/*#indexTopStory {
+	padding: 0 5% 0 5%;
+}*/

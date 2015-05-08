@@ -124,8 +124,10 @@ app.controller('HomeCtrl', [
 
 app.controller('SignupCtrl', [
 	'$scope',
+	'$state',
+	'auth',
 	'signup',
-	function($scope, signup){
+	function($scope, $state, auth, signup){
 		// TODO: Get dropdown arrays from server
 		populateStates();
 		populateCigaretteBrands();
@@ -152,7 +154,13 @@ app.controller('SignupCtrl', [
 		$scope.register = function(){
 			if ($scope.user.password !== $scope.user.passwordConfirmation){
 				$scope.registrationErrors.push('Password and confirmation do not match');
-				$scope.registrationErrors.push('This is totally a test error message for styling purposes');
+			}
+			else {
+				auth.register($scope.user).error(function(error){
+					$scope.registrationErrors.push(error);
+				}).then(function(){
+					$state.go('home');
+				});
 			}
 		};
 		$scope.getSignupPage = function(){
@@ -207,6 +215,44 @@ app.factory('signup', [
 		return service;
 	}
 ]);
+
+app.factory('auth', ['$http', '$window', function($http, $window){
+	var auth = {};
+
+	auth.saveToken = function(token){
+		$window.localStorage['nicotines-kryptonite-token'] = token;
+	};
+	auth.getToken = function(){
+		return $window.localStorage['nicotines-kryptonite-token'];
+	};
+	auth.isLoggedIn = function(){
+		var token = auth.getToken();
+		var isAuthenticated = false;
+
+		if(token){
+			var payload = JSON.parse($window.atob(token.split('.')[1]));
+			isAuthenticated = payload.exp > Date.now() / 1000;
+		}
+
+		return isAuthenticated;
+	};
+	// OMITTED currentUser function: don't think I need it
+	auth.register = function(user){
+		return $http.post('/register', user).success(function(data){
+			auth.saveToken(data.token);
+		});
+	};
+	auth.logIn = function(user){
+		return $http.post('/login', user).success(function(data){
+			auth.saveToken(data.token);
+		});
+	};
+	auth.logOut = function(user){
+		$window.localStorage.removeItem('nicotines-kryptonite-token');
+	};
+
+	return auth;
+}]);
 
 app.config([
 	'$stateProvider',

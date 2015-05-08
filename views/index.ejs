@@ -2,11 +2,14 @@
 <html>
   <head>
     <title><%= title %></title>
-    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.10/angular.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/angular-ui-router/0.2.10/angular-ui-router.js"></script>
+    <script src="/javascripts/angular-1.3.9/angular.js"></script>
+    <script src="/javascripts/angular-ui-router.js"></script>
+    <!-- <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.10/angular.js"></script> -->
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/angular-ui-router/0.2.10/angular-ui-router.js"></script> -->
     <!-- <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script> -->
     <script src="/javascripts/angularApp.js"></script>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="/stylesheets/bootstrap-3.3.4-dist/css/bootstrap.css" />
+    <!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css" /> -->
     <link rel='stylesheet' href='/stylesheets/style.css' />
   </head>
   <body ng-app="nicotinesKryptonite" ng-controller="NavCtrl">
@@ -37,8 +40,8 @@
         <!-- add the apostophre when Im not devving anymore -->
         <h1 style="margin-top: 0;">Nicotines Kryptonite<br /><small>Helping you help yourself</small></h1>
       </div>
-      <div class="jumbotron">
-        <img ng-src="/images/{{ homeStoryImage }}" id="homeStoryImage" class="img-rounded" alt="{{ homeStoryImage }}" />
+      <div id="indexTopStory" class="jumbotron">
+        <img id="homeStoryImage" ng-src="/images/{{ homeStoryImage }}" id="homeStoryImage" class="img-rounded" alt="{{ homeStoryImage }}" />
         <h1>{{ homeStoryTitle }}</h1>
         <p>{{ homeStorySummary | truncate:true:100:' ...' }}&nbsp;<a href="" ng-click="">Read More ></a></p>
       </div>
@@ -48,8 +51,8 @@
     </script>
 
     <script type="text/ng-template" id="/signup.html">
-      <div ng-show="registrationErrors.length > 0" class="alert alert-danger">
-        <span class="errorMessage" ng-repeat="error in registrationErrors">{{ error }}</span>
+      <div id="registrationErrorsDiv" ng-show="registrationErrors.length > 0" class="alert alert-danger">
+        <h4 ng-repeat="error in registrationErrors" class="errorMessage">{{ error }}</h4>
       </div>
       <form ng-submit="signup()">
           <div ng-show="getSignupPage() === 'Intro'" class="panel panel-primary">
@@ -70,15 +73,16 @@
               <input type="text" class="form-control signup-control" placeholder="Your Name" />
               <div class="input-group signup-control">
                 <span class="input-group-addon">Birthdate</span>
-                <input type="date" class="form-control signup-control datepicker" placeholder="yyyy-MM-dd" />
+                <input type="date" class="form-control signup-control datepicker" placeholder="yyyy-MM-dd" ng-model="user.birthdate" />
               </div>
               <div class="input-group signup-control">
                 <span class="input-group-addon">State of Residence</span>
-                <select id="stateSelect" class="form-control"></select>
+                <select id="stateSelect" class="form-control"
+                        ng-model="user.stateOfResidence"></select>
               </div>
               <div class="input-group signup-control">
                 <span class="input-group-addon">How You Plan on Quitting</span>
-                <select class="form-control">
+                <select class="form-control" ng-model="user.quittingMethod">
                   <option>Cold Turkey</option>
                   <option>Nicotine Gum</option>
                   <option>Nicotine Lozenges</option>
@@ -121,17 +125,20 @@
               <div class="input-group signup-control" 
                    ng-show="user.selectedTobaccoTypes.indexOf('Cigarettes') > -1">
                 <span class="input-group-addon">Cigarette Brand</span>
-                <select id="cigaretteBrands" class="form-control"></select>
+                <select id="cigaretteBrands" class="form-control"
+                        ng-model="user.cigaretteBrand"></select>
               </div>
               <div class="input-group signup-control"
                    ng-show="user.selectedTobaccoTypes.indexOf('Smokeless Tobacco') > -1">
                 <span class="input-group-addon">Smokeless Brand</span>
-                <select id="smokelessBrands" class="form-control"></select>
+                <select id="smokelessBrands" class="form-control"
+                        ng-model="user.dipBrand"></select>
               </div>
               <div class="input-group signup-control"
                    ng-show="user.selectedTobaccoTypes.indexOf('Cigars') > -1">
                 <span class="input-group-addon">Cigar Brand</span>
-                <select id="cigarBrands" class="form-control"></select>
+                <select id="cigarBrands" class="form-control"
+                        ng-model="user.cigarBrand"></select>
               </div>
               <button class="signupButton btn btn-primary pull-right" ng-click="goNextPage('Account')">Next</button>
             </div>
@@ -150,7 +157,7 @@
                      ng-model="user.password" />
               <input type="password" class="form-control signup-control" placeholder="Confirm Password"
                      ng-model="user.passwordConfirmation" />
-              <button class="signupButton btn btn-primary pull-right" ng-click="register()" />
+              <button class="signupButton btn btn-primary pull-right" ng-click="register()">Register!</span>
             </div>
           </div>
       </form>

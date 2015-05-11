@@ -13,6 +13,7 @@ module.exports = router;
 
 var User = mongoose.model('User');
 var Story = mongoose.model('Story');
+var Dashboard = mongoose.model('Dashboard');
 //Story.remove({});
 
 var auth = jwt({secret: 'SECRET', userProperty: 'payload'});

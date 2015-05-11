@@ -71,3 +71,12 @@ a {
 .navButton {
 	cursor: pointer;
 }
+
+.userLink a {
+	color: #64E86F;
+}
+
+.userLinkActive a {
+	color: white;
+	background-color: #159620;
+}

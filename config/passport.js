@@ -5,10 +5,12 @@ var User = mongoose.model('User');
 
 passport.use(new LocalStrategy(
 	function(username, password, done){
-		User.findOne({username: username}, function(err, user){
+		var criteria = (username.indexOf('@') === -1) ? {username: username} : {email: username};
+		User.findOne(criteria, function(err, user){
 			if (err) { return done(err); }
 			if(!user){
-				return done(null, false, {message: 'Incorrect username'});
+				usernameError = (username.indexOf('@') === -1) ? 'Incorrect username' : 'Incorrect email address';
+				return done(null, false, {message: usernameError});
 			}
 			if(!user.isValidPassword(password)){
 				return done(null, false, {message: 'Incorrect password'});

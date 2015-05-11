@@ -123,7 +123,7 @@ app.controller('DashboardCtrl', [
 	'$scope',
 	'auth',
 	function($scope, auth){
-
+		$scope.dashboard = auth.dashboard;
 	}
 ]);
 
@@ -180,9 +180,10 @@ app.controller('SignupCtrl', [
 
 app.controller('NavCtrl', [
 	'$scope',
+	'$state',
 	'auth',
 	'signup',
-	function($scope, auth, signup){
+	function($scope, $state, auth, signup){
 		$scope.beginSignup = function(){
 			signup.beginSignup();
 		};
@@ -196,26 +197,47 @@ app.controller('NavCtrl', [
 
 		$scope.logIn = function(){
 			$scope.toggleModal();
-			//alert('logging in!');
-
-			if ($scope.isEmailAddress($scope.user.loginName)){
-				$scope.user.email = $scope.user.loginName;
-			}
-			else $scope.user.username = $scope.user.loginName;
-
 			$scope.errors = [];
 
 			auth.logIn($scope.user).error(function(error){
 				$scope.errors.push(error.message);
 			}).then(function(){
-				$scope.isLoggingIn = false;
+				//$scope.isLoggingIn = false;
+				$scope.setActive('dashboardLink');
 				$state.go('dashboard');
 			});
+		};
+		$scope.logout = function(){
+			auth.logOut();
 		};
 
 		$scope.showModal = false;
 		$scope.toggleModal = function(){
 			$scope.showModal = !$scope.showModal;
+		};
+
+		$scope.isLoggedIn = function(){
+			return auth.isLoggedIn();
+		};
+
+		$scope.setActive = function(element_id){
+			var classList = document.getElementById(element_id).classList;
+			var userActiveElement = document.getElementsByClassName("userLinkActive")[0];
+			var activeElement = document.getElementsByClassName("active")[0];
+
+			if (userActiveElement){
+				userActiveElement.classList.remove("userLinkActive");
+			}
+			if (activeElement){
+				activeElement.classList.remove("active");
+			}
+
+			if (classList.contains("userLink")){
+				classList.add("userLinkActive");
+			}
+			else {
+				classList.add("active");
+			}
 		};
 	}
 ]);
@@ -315,7 +337,9 @@ app.factory('signup', [
 ]);
 
 app.factory('auth', ['$http', '$window', function($http, $window){
-	var auth = {};
+	var auth = {
+		dashboard: {}
+	};
 
 	auth.saveToken = function(token){
 		$window.localStorage['nicotines-kryptonite-token'] = token;
@@ -343,11 +367,12 @@ app.factory('auth', ['$http', '$window', function($http, $window){
 	auth.logIn = function(user){
 		return $http.post('/dashboard', user).success(function(data){
 			auth.saveToken(data.token);
-			alert('the dash: ' + data.dashboard);
+			//alert('the dash: ' + data.dashboard.greeting);
+			auth.dashboard = data.dashboard;
 			//$window.localStorage['dashboard'] = data.dashboard;
 		});
 	};
-	auth.logOut = function(user){
+	auth.logOut = function(){
 		$window.localStorage.removeItem('nicotines-kryptonite-token');
 	};
 

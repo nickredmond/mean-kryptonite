@@ -41,6 +41,13 @@ router.post('/register', function(request, response, next){
 
 	user.setPassword(request.body.password);
 
+	var dashboard = new Dashboard();
+	dashboard.milestones = [];
+	dashboard.dateQuit = new Date().getDate();
+	dashboard.save();
+
+	user.dashboard = dashboard;
+
 	user.save(function(err){
 		if (err) { return next(err); }
 		return response.json({token: user.generateJWT()});
@@ -85,4 +92,20 @@ router.get('/topStory', function(request, response, next){
 
 router.get('/stories/:story', function(request, response){
 	response.json(request.story);
+});
+
+router.post('/dashboard', function(request, response, next){
+	if (!(request.body.username || request.body.email) || !request.body.password){
+		return response.status(400).json({message: 'Please fill out all fields'});
+	}
+
+	passport.authenticate('local', function(err, user, info){
+		if (err) { return next(err); }
+
+		if (user){
+			return response.json({token: user.generateJWT(), dashboard: user.dashboard});
+		} else {
+			return response.status(401).json(info);
+		}
+	})(request, response, next);
 });

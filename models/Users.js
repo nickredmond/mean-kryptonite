@@ -15,7 +15,8 @@ var userSchema = new mongoose.Schema({
 	cigarsPerDay: {type: Number, default: 0},
 	cigaretteBrand: {type: String, null: true},
 	dipBrand: {type: String, null: true},
-	cigarBrand: {type: String, null: true}
+	cigarBrand: {type: String, null: true},
+	dashboard: {type: mongoose.Schema.Types.ObjectId, ref: 'Dashboard'}
 });
 
 userSchema.methods.setPassword = function(password){

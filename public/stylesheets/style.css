@@ -38,7 +38,7 @@ a {
 	padding-top: 5px;
 }
 
-#registrationErrorsDiv {
+.pageErrorsDiv {
 	text-align: center;
 }
 
@@ -66,4 +66,8 @@ a {
 .pageHeader h1 {
 	padding-top: 0;
 	margin-top: 0;
+}
+
+.navButton {
+	cursor: pointer;
 }

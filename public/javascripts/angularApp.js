@@ -1,6 +1,7 @@
 var SECONDS_PER_DEATH = 5.35;
 var MILLIS_PER_SECOND = 1000;
 var DEATH_UPDATE_INTERVAL = 10000;
+var EMAIL_REGEX = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
 
 //--- HELPER FUNCTIONS ---//
 function populateStates(){
@@ -90,8 +91,9 @@ app.controller('HomeCtrl', [
 	'$scope',
 	'$interval',
 	'stories',
+	'auth',
 	'signup',
-	function($scope, $interval, stories, signup){
+	function($scope, $interval, stories, auth, signup){
 		$scope.deathToll = 0;
 		var topStory = stories.topStory;
 		$scope.homeStoryImageUri = topStory.imageUri;
@@ -114,6 +116,14 @@ app.controller('HomeCtrl', [
 
 		$scope.updateDeathToll();
 		$interval($scope.updateDeathToll, DEATH_UPDATE_INTERVAL);
+	}
+]);
+
+app.controller('DashboardCtrl', [
+	'$scope',
+	'auth',
+	function($scope, auth){
+
 	}
 ]);
 
@@ -170,13 +180,88 @@ app.controller('SignupCtrl', [
 
 app.controller('NavCtrl', [
 	'$scope',
+	'auth',
 	'signup',
-	function($scope, signup){
+	function($scope, auth, signup){
 		$scope.beginSignup = function(){
 			signup.beginSignup();
 		};
+
+		$scope.user = {};
+		$scope.errors = [];
+
+		$scope.isEmailAddress = function(text){
+			return EMAIL_REGEX.test(text);
+		};
+
+		$scope.logIn = function(){
+			$scope.toggleModal();
+			//alert('logging in!');
+
+			if ($scope.isEmailAddress($scope.user.loginName)){
+				$scope.user.email = $scope.user.loginName;
+			}
+			else $scope.user.username = $scope.user.loginName;
+
+			$scope.errors = [];
+
+			auth.logIn($scope.user).error(function(error){
+				$scope.errors.push(error.message);
+			}).then(function(){
+				$scope.isLoggingIn = false;
+				$state.go('dashboard');
+			});
+		};
+
+		$scope.showModal = false;
+		$scope.toggleModal = function(){
+			$scope.showModal = !$scope.showModal;
+		};
 	}
 ]);
+
+app.directive('modal', function(){
+	return {
+		template: '<div class="modal fade">' +
+			'<div class="modal-dialog">' +
+				'<div class="modal-content">' +
+					'<div class="modal-header">' +
+						'<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>' +
+						'<h4 class="modal-title">{{ title }}</h4>'  +
+					'</div>' +
+					'<div class="modal-body" ng-transclude></div>' +
+				'</div>' +
+			'</div>' +
+		'</div>',
+		restrict: 'E',
+		transclude: true,
+		replace: true,
+		scope: true,
+		link: function postLink(scope, element, attrs) {
+			scope.title = attrs.title;
+
+			scope.$watch(attrs.visible, function(value){
+				if (value){
+					$(element).modal('show');
+				}
+				else {
+					$(element).modal('hide');
+				}
+			});
+
+			$(element).on('shown.bs.modal', function(){
+				scope.$apply(function(){
+					scope.$parent[attrs.visible] = true;
+				});
+			});
+			$(element).on('hidden.bs.modal', function(){
+				scope.$apply(function(){
+					scope.$parent[attrs.visible] = false;
+				});
+			});
+		}
+	};
+});
 
 app.controller('StoriesCtrl', [
 	'$scope',
@@ -256,8 +341,10 @@ app.factory('auth', ['$http', '$window', function($http, $window){
 		});
 	};
 	auth.logIn = function(user){
-		return $http.post('/login', user).success(function(data){
+		return $http.post('/dashboard', user).success(function(data){
 			auth.saveToken(data.token);
+			alert('the dash: ' + data.dashboard);
+			//$window.localStorage['dashboard'] = data.dashboard;
 		});
 	};
 	auth.logOut = function(user){
@@ -296,6 +383,16 @@ app.config([
 				}]
 			}
 		});
+		$stateProvider.state('dashboard', {
+			url: '/dashboard',
+			templateUrl: '/dashboard.html',
+			controller: 'DashboardCtrl',
+			resolve: {
+				dashboard: ['$stateParams', function($stateParams){
+					return null;// D-<==>}}D:
+				}]
+			}
+});
 
 		$urlRouterProvider.otherwise('home');
 	}

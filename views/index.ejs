@@ -2,13 +2,14 @@
 <html>
   <head>
     <title><%= title %></title>
-    <script src="/javascripts/angular-1.3.9/angular.js"></script>
-    <script src="/javascripts/angular-ui-router.js"></script>
     <!-- <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.10/angular.js"></script> -->
     <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/angular-ui-router/0.2.10/angular-ui-router.js"></script> -->
-    <!-- <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script> -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+    <link rel="stylesheet" href="/bootstrap-3.3.4-dist/css/bootstrap.css" />
+    <script src="/bootstrap-3.3.4-dist/js/bootstrap.js"></script>
+    <script src="/javascripts/angular-1.3.9/angular.js"></script>
+    <script src="/javascripts/angular-ui-router.js"></script>
     <script src="/javascripts/angularApp.js"></script>
-    <link rel="stylesheet" href="/stylesheets/bootstrap-3.3.4-dist/css/bootstrap.css" />
     <!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css" /> -->
     <link rel='stylesheet' href='/stylesheets/style.css' />
   </head>
@@ -16,10 +17,23 @@
     <!-- remember to ng-hide Login/Signup and replace with "log out" -->
   	<nav class="navbar navbar-default pull-right">
   		<ul class="nav navbar-nav">
-  			<li><a href="#">Log In</a></li>
+  			<li><a ng-href="" class="navButton" ng-click="toggleModal()">Log In</a></li>
   			<li><a ng-click="beginSignup()" ng-href="#/signup">Sign Up</a></li>
   		</ul>
   	</nav>
+    <modal title="Log In" visible="showModal">
+      <form role="form">
+        <div class="form-group">
+          <label>Email or Username</label>
+          <input ng-model="user.loginName" type="text" class="form-control" id="username" placeholder="Email / Username" />
+        </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input ng-model="user.password" type="password" class="form-control" id="password" placeholder="Password" />
+        </div>
+        <button type="submit" ng-click="logIn()" class="btn btn-default">Submit</button>
+      </form>
+    </modal>
   	<div class="row">
   		<div class="col-md-3" style="max-width: 50%; min-width: 200px;">
   			<ul id="siteNav" class="nav nav-pills nav-stacked">
@@ -31,11 +45,15 @@
   			</ul>
   		</div>
       <div class="col-md-6">
+        <div ng-show="errors.length > 0" class="alert alert-danger pageErrorsDiv">
+          <h4 ng-repeat="error in errors" class="errorMessage">{{ error }}</h4>
+        </div>
         <ui-view></ui-view>
       </div>
   	</div>
     
    <script type="text/ng-template" id="/home.html">
+
       <div class="page-header" style="margin-top: 0;">
         <!-- add the apostophre when Im not devving anymore -->
         <h1 style="margin-top: 0;">Nicotines Kryptonite<br /><small>Helping you help yourself</small></h1>
@@ -51,7 +69,7 @@
     </script>
 
     <script type="text/ng-template" id="/signup.html">
-      <div id="registrationErrorsDiv" ng-show="registrationErrors.length > 0" class="alert alert-danger">
+      <div ng-show="registrationErrors.length > 0" class="alert alert-danger pageErrorsDiv">
         <h4 ng-repeat="error in registrationErrors" class="errorMessage">{{ error }}</h4>
       </div>
       <form ng-submit="signup()">
@@ -172,6 +190,11 @@
       <p id="storySummary" class="text-muted"><em>{{ story.summary }}</em></p>
       <hr color="#aaa" noshade>
       <div ng-include src="storyText"></div>
+    </script>
+    <script type="text/ng-template" id="/dashboard.html">
+      <div class="page-header">
+        <h2>{{ dashboard.greeting }}, {{ dashboard.firstName }}! <small>{{ dashboard.subgreeting }}</small></h2>
+      </div>
     </script>
   </body>
 </html>

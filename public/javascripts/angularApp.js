@@ -217,6 +217,7 @@ app.controller('NavCtrl', [
 			});
 		};
 		$scope.logout = function(){
+			$scope.setActive('homeLink');
 			auth.logOut();
 		};
 

@@ -194,6 +194,7 @@ app.controller('NavCtrl', [
 	'signup',
 	function($scope, $state, auth, signup){
 		$scope.beginSignup = function(){
+			$scope.errors = [];
 			signup.beginSignup();
 		};
 
@@ -234,6 +235,8 @@ app.controller('NavCtrl', [
 			var classList = document.getElementById(element_id).classList;
 			var userActiveElement = document.getElementsByClassName("userLinkActive")[0];
 			var activeElement = document.getElementsByClassName("active")[0];
+
+			$scope.errors = [];
 
 			if (userActiveElement){
 				userActiveElement.classList.remove("userLinkActive");

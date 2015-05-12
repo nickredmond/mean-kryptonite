@@ -132,14 +132,17 @@
             <div class="panel-body">
               <input type="text" 
                      class="form-control signup-control"
+                     ng-model="user.cigarettesPerDay"
                      ng-show="user.selectedTobaccoTypes.indexOf('Cigarettes') > -1"
                      placeholder="Cigarettes smoked per day" />
               <input type="text" 
                      class="form-control signup-control"
+                     ng-model="user.dipsPerDay"
                      ng-show="user.selectedTobaccoTypes.indexOf('Smokeless Tobacco') > -1"
                      placeholder="Dips/Pouches taken per day" />
                <input type="text" 
                      class="form-control signup-control"
+                     ng-model="user.cigarsPerDay"
                      ng-show="user.selectedTobaccoTypes.indexOf('Cigars') > -1"
                      placeholder="Cigars smoked per day" />
               <div class="input-group signup-control" 
@@ -194,10 +197,14 @@
       <div ng-include src="storyText"></div>
     </script>
     <script type="text/ng-template" id="/dashboard.html">
-      <div class="page-header">
+      <div class="page-header pageHeader">
         <h2>{{ dashboard.greeting }}, {{ dashboard.firstName }}! <small>{{ dashboard.subgreeting }}</small></h2>
       </div>
-      <h3>Craving Level: {{ dashboard.cravingLevel }}</h3>
+      <h3>Craving Level:</h3>
+      <div class="progress">
+        <div id="cravingLevelBar" class="progress-bar" role="progressbar" aria-valuenow="{{ dashboard.cravingLevel }}" aria-valuemin="0" aria-valuemax="100" style="width: {{ dashboard.cravingLevel }}%; min-width: 8%;">{{ dashboard.cravingLevel }}%
+        </div>
+      </div>
     </script>
   </body>
 </html>

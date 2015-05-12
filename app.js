@@ -10,6 +10,7 @@ var passport = require('passport');
 require('./models/Users');
 require('./models/Stories');
 require('./models/Dashboards');
+require('./models/TobaccoPricings');
 require('./models/Milestones'); 
 require('./config/passport');
 

@@ -14,7 +14,16 @@ module.exports = router;
 var User = mongoose.model('User');
 var Story = mongoose.model('Story');
 var Dashboard = mongoose.model('Dashboard');
-//Story.remove({});
+//Story.remove({}); // removes all Stories
+var TobaccoPricing = mongoose.model('TobaccoPricing');
+
+// var pricing = new TobaccoPricing({
+// 	tobaccoType: 'cigarette',
+// 	brandName: 'Marlboro',
+// 	state: 'UT',
+// 	averagePrice: 7
+// });
+// pricing.save();
 
 var auth = jwt({secret: 'SECRET', userProperty: 'payload'});
 
@@ -33,7 +42,7 @@ router.post('/register', function(request, response, next){
 	user.quittingMethod = request.body.quittingMethod;
 
 	//-- handle if user doesn't use a certain type --//
-
+	console.log('test this: ' + request.body.cigarettesPerDay);
 	user.cigarettesPerDay = request.body.cigarettesPerDay;
 	user.dipsPerDay = request.body.dipsPerDay;
 	user.cigarsPerDay = request.body.cigarsPerDay;
@@ -45,7 +54,7 @@ router.post('/register', function(request, response, next){
 
 	var dashboard = new Dashboard();
 	dashboard.milestones = [];
-	dashboard.dateQuit = new Date().getDate();
+	dashboard.dateQuit = new Date();
 	dashboard.save();
 
 	user.dashboard = dashboard;
@@ -100,11 +109,11 @@ function calculateCravingLevel(user){
 	console.log('user: ' + user.email);
 
 	var dateQuit = user.dashboard.dateQuit;
-	var difference = dateQuit.getTime() - new Date().getTime();
+	var difference = new Date().getTime() - dateQuit.getTime();
 
 	var days = Math.floor(difference / (1000 * 60 * 60 * 24));
  	difference -= days * (1000 * 60 * 60 * 24);
-
+ 	console.log('date: ' + dateQuit);
  	var hours = Math.floor(difference / (1000 * 60 * 60));
  	days += (hours / 24);
  	difference -= hours * (1000 * 60 * 60);
@@ -114,6 +123,7 @@ function calculateCravingLevel(user){
  	difference -= minutes * (1000 * 60);
 
  	var cravingLevel = 0;
+ 	console.log('days: ' + days + ', hours: ' + hours + ', minutes: ' + minutes);
  	var maxCravingValue = 3.2;
 
  	var normalizedDays = days / 2;
@@ -129,7 +139,7 @@ function calculateCravingLevel(user){
  	}
  	else cravingLevel = 0;
 
- 	return cravingLevel / maxCravingValue;
+ 	return (cravingLevel / maxCravingValue) * 100;
 }	
 
 router.post('/dashboard', function(request, response, next){
@@ -156,7 +166,7 @@ router.post('/dashboard', function(request, response, next){
 						greeting: "Welcome",
 						firstName: user.name,
 						subgreeting: "You can do this!",
-						cravingLevel: calculateCravingLevel(user)
+						cravingLevel: Math.round((calculateCravingLevel(user) + 0.00001) * 100) / 100
 					}
 				});
 			});

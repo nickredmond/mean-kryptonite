@@ -73,10 +73,15 @@ a {
 }
 
 .userLink a {
-	color: #64E86F;
+	color: #5CD166;
 }
 
 .userLinkActive a {
 	color: white;
 	background-color: #159620;
+}
+
+.userLinkActive a:focus {
+	color: white;
+	background-color: #159620 !important;
 }

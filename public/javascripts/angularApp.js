@@ -124,6 +124,15 @@ app.controller('DashboardCtrl', [
 	'auth',
 	function($scope, auth){
 		$scope.dashboard = auth.dashboard;
+
+		var cravingBar = document.getElementById('cravingLevelBar');
+		if ($scope.dashboard.cravingLevel < 50){
+			cravingBar.classList.add("progress-bar-success");
+		}
+		else if ($scope.dashboard.cravingLevel < 80){
+			cravingBar.classList.add("progress-bar-warning");
+		}
+		else cravingBar.classList.add("progress-bar-danger");
 	}
 ]);
 

@@ -27,10 +27,95 @@ var TobaccoPricing = mongoose.model('TobaccoPricing');
 
 var auth = jwt({secret: 'SECRET', userProperty: 'payload'});
 
+function isOneOrMoreTypeSelected(request){
+	return ((request.body.cigarettesPerDay && request.body.cigaretteBrand) || 
+		(request.body.dipsPerDay && request.body.dipBrand) || 
+		(request.body.cigarsPerDay && request.body.cigarBrand));
+}
+
+function isUserFieldTaken(query, errorMessage, callback){
+	var errorMessages = null;
+
+	query.exec(function(err, users){
+		if (users.length > 0){
+			errorMessages = [errorMessage];
+			callback(errorMessages); //next(new Error("That username has already been taken"));
+		}
+	});
+}
+
 router.post('/register', function(request, response, next){
-	//-- Doesn't handle all required data. Up to the client to handle that right now --//
-	if (!(request.body.username && request.body.email && request.body.password)){
-		return response.status(400).json({message: 'Please fill out all fields'});
+	var errorMessages = [];
+	var NUMBER_PATTERN = /^\d+$/;
+	var MIN_USERNAME_LENGTH = 6;
+	var EMAIL_PATTERN = /^[\w-]+(?:\.[\w-]+)*@(?:[\w-]+\.)+[a-zA-Z]{2,7}$/;
+	var MIN_PASSWORD_LENGTH = 8;
+	var MAX_PASSWORD_LENGTH = 50;
+	var PASSWORD_PATTERN = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,50}$/; // change to include constants
+	var CAPITAL_LETTER_PATTERN = /^(?=.*[A-Z]).{8,50}$/;
+	var LOWERCASE_LETTER_PATTERN = /^(?=.*[a-z]).{8,50}$/;
+	var ONE_NUMBER_PATTERN = /^(?=.*\d).{8,50}$/;
+
+	if (!request.body.username){
+		errorMessages.push("Username is required");
+	}
+	else if (request.body.username.length < MIN_USERNAME_LENGTH){
+		errorMessages.push("Username must be at least " + MIN_USERNAME_LENGTH + " characters");
+	}
+
+	if (!request.body.email){
+		errorMessages.push("Email address is required");
+	}
+	else if (!EMAIL_PATTERN.test(request.body.email)){
+		errorMessages.push("Email address is invalid");
+	}
+
+	if (!request.body.password){
+		errorMessages.push("Password is required")
+	}
+	else if (!PASSWORD_PATTERN.test(request.body.password)){
+		if (request.body.password.length < MIN_PASSWORD_LENGTH ||
+			request.body.password.length > MAX_PASSWORD_LENGTH){
+			errorMessages.push("Password must be between " + MIN_PASSWORD_LENGTH + " and " +
+				MAX_PASSWORD_LENGTH + " characters");
+		}
+		else {
+			if (!CAPITAL_LETTER_PATTERN.test(request.body.password)){
+				errorMessages.push("Password must contain at least one uppercase letter");
+			}
+			if (!LOWERCASE_LETTER_PATTERN.test(request.body.password)){
+				errorMessages.push("Password must contain at least one lowercase letter");
+			}
+			if (!ONE_NUMBER_PATTERN.test(request.body.password)){
+				errorMessages.push("Password must contain at least one number");
+			}
+		}
+	}
+
+	if (!request.body.name){
+		errorMessages.push("Your name is required");
+	}
+	if (!request.body.stateOfResidence){
+		errorMessages.push("Please tell us where you live")
+	}
+	if (!request.body.birthdate){
+		errorMessages.push("Birth date is required");
+	}
+	if (!request.body.quittingMethod){
+		errorMessages.push("Please tell us how you plan on quitting");
+	}
+
+	if (!isOneOrMoreTypeSelected(request)){
+		errorMessages.push("Please select at least one form of tobacco you use");
+	}
+	else if ((request.body.dipsPerDay && !NUMBER_PATTERN.test(request.body.dipsPerDay)) ||
+		(request.body.cigarettesPerDay && !NUMBER_PATTERN.test(request.body.cigarettesPerDay)) ||
+		(request.body.cigarsPerDay && !NUMBER_PATTERN.test(request.body.cigarsPerDay))){
+		errorMessages.push("The amount of tobacco you use per day must be a number");
+	}
+
+	if (errorMessages.length > 0){
+		return response.status(400).json({messages: errorMessages});
 	}
 
 	var user = new User();
@@ -42,7 +127,6 @@ router.post('/register', function(request, response, next){
 	user.quittingMethod = request.body.quittingMethod;
 
 	//-- handle if user doesn't use a certain type --//
-	console.log('test this: ' + request.body.cigarettesPerDay);
 	user.cigarettesPerDay = request.body.cigarettesPerDay;
 	user.dipsPerDay = request.body.dipsPerDay;
 	user.cigarsPerDay = request.body.cigarsPerDay;
@@ -59,9 +143,46 @@ router.post('/register', function(request, response, next){
 
 	user.dashboard = dashboard;
 
+	if (user.cigaretteBrand){
+		TobaccoPricing.find({
+			'tobaccoType': "cigarette",
+			'brandName': user.cigaretteBrand,
+			'state': user.stateOfResidence
+		}).exec(function(err, tobaccoPricings){
+			if (err) { return next(err); }
+
+			user.cigarettePrice = tobaccoPricings[0].averagePrice;
+			user.save(function(err){if(err)return next(err);});
+		});
+	}
+	if (user.dipBrand){
+		TobaccoPricing.find({
+			'tobaccoType': "smokeless",
+			'brandName': user.dipBrand,
+			'state': user.stateOfResidence
+		}).exec(function(err, tobaccoPricings){
+			if (err) { return next(err); }
+
+			user.dipPrice = tobaccoPricings[0].averagePrice;
+			user.save(function(err){if(err)return next(err);});
+		});
+	}
+	if (user.cigarBrand){
+		TobaccoPricing.find({
+			'tobaccoType': "cigar",
+			'brandName': user.cigarBrand,
+			'state': user.stateOfResidence
+		}).exec(function(err, tobaccoPricings){
+			if (err) { return next(err); }
+
+			user.cigarPrice = tobaccoPricings[0].averagePrice;
+			user.save(function(err){if(err)return next(err);});
+		});
+	}
+
 	user.save(function(err){
 		if (err) { return next(err); }
-		return response.json({token: user.generateJWT()});
+		return handleLogin(user, response, next, null);//response.json({token: user.generateJWT()});
 	});
 });
 
@@ -79,7 +200,6 @@ router.param('story', function(request, response, next, id){
 
 //--- DEV URL - COMMENT OUT WHEN NOT IN USE ---//
 // router.post('/newStory', function(request, response, next){
-// 	// console.log("this is a request: " + request.body.story);
 // 	Story.create({title: request.body.title,
 // 				  summary: request.body.summary,
 // 				  imageUri: request.body.imageUri,
@@ -91,6 +211,19 @@ router.param('story', function(request, response, next, id){
 // 			response.json({story: story});
 // 	});	
 // });
+
+//--- DEV URL - COMMENT OUT WHEN NOT IN USE ---//
+router.post('/newTobaccoPricing', function(request, response, next){
+	TobaccoPricing.create({
+		tobaccoType: request.body.tobaccoType,
+		brandName: request.body.brandName,
+		state: request.body.state,
+		averagePrice: request.body.averagePrice
+	}, function(err, tobaccoPricing){
+		if (err) { return next(err); }
+		response.json({tobaccoPricing: tobaccoPricing});
+	});
+});
 
 router.get('/topStory', function(request, response, next){
 	Story.findOne({'isTopStory': true})
@@ -140,6 +273,32 @@ function calculateCravingLevel(user){
  	else cravingLevel = 0;
 
  	return (cravingLevel / maxCravingValue) * 100;
+}
+
+function handleLogin(user, response, next, info){
+	if (user){
+		Dashboard.findById(user.dashboard).exec(function(err, doc){
+			var token = user.generateJWT();
+			user.dashboard = doc;
+			user.token = token;
+
+			user.save(function(err){
+				if (err) { return next(err); }
+
+				return response.json({token: user.generateJWT(),
+					id: user._id, 
+					dashboard: {
+						greeting: "Welcome",
+						firstName: user.name,
+						subgreeting: "You can do this!",
+						cravingLevel: Math.round((calculateCravingLevel(user) + 0.00001) * 100) / 100
+					}
+				});
+			});
+		});
+	} else {
+		return response.status(401).json(info);
+	}
 }	
 
 router.post('/dashboard', function(request, response, next){
@@ -154,26 +313,98 @@ router.post('/dashboard', function(request, response, next){
 		// 	console.log('err: ' + err);
 		// 	console.log('doc: ' + JSON.stringify(doc));
 		// });
-		var dashboard = null;
-
-		if (user){
-
-			Dashboard.findById(user.dashboard).exec(function(err, doc){
-				user.dashboard = doc;
-
-				return response.json({token: user.generateJWT(), 
-					dashboard: {
-						greeting: "Welcome",
-						firstName: user.name,
-						subgreeting: "You can do this!",
-						cravingLevel: Math.round((calculateCravingLevel(user) + 0.00001) * 100) / 100
-					}
-				});
-			});
-		//console.log('len: ' + dashboard);
-			
-		} else {
-			return response.status(401).json(info);
-		}
+		return handleLogin(user, response, next, info);
+		
 	})(request, response, next);
+});
+
+function authenticateUser(id, token, callback){
+	User.findById(id).exec(function(err, user){
+		if (err) { 
+			callback(err, null); 
+		}
+		else if (user.token !== token){
+			console.log("userT: " + JSON.stringify(user));
+			console.log("clientT: " + token);
+			callback("Invalid authentication token");
+		}
+		else callback(null, user);
+	});
+}
+
+router.post('/tobaccoCost', function(request, response, next){
+	if (!request.body.id || ! request.body.token){
+		return response.status(400).json({message: "Could not authenticate user"});
+	}
+
+	authenticateUser(request.body.id, request.body.token, function(err, user){
+		if (err){
+			return response.status(400).json({message: err});
+		}
+		else if (!user){
+			return response.status(400).json({message: "Could not find user"});
+		}
+
+		var userMessage = user.hasUpdatedTobaccoCost ? null :
+				"We have pre-populated the amount you spend on tobacco based on our best guess. " +
+				"Feel free to change the amounts so they are more accurate.";
+
+		return response.json({
+			cigarettePrice: user.cigarettePrice,
+			dipPrice: user.dipPrice,
+			cigarPrice: user.cigarPrice,
+			infoMessage: userMessage
+		});
+	});
+});
+
+router.post('/updateTobaccoCost', function(request, response, next){
+	var PRICE_PATTERN = /^\d+(?:\.\d{1,2})?$/;
+	var status = 200;
+	var responseMessage = "";
+
+	if (!request.body.id || ! request.body.token){
+		status = 403;
+		responseMessage: "Could not authenticate user";
+	}
+
+	authenticateUser(request.body.id, request.body.token, function(err, user){
+		if (err || !user){
+			status = 401;
+			responseMessage = "Authentication failed! Please log in again";
+		}
+		
+		if (request.body.cigarettePrice){
+			if (!PRICE_PATTERN.test(request.body.cigarettePrice)){
+				status = 400;
+				responseMessage = "Cigarette price must be a currency value (e.g. '2.31' or '2')";
+			}
+			user.setCigarettePrice(request.body.cigarettePrice);
+		}
+		if (request.body.dipPrice){
+			if (!PRICE_PATTERN.test(request.body.dipPrice)){
+				status = 400;
+				responseMessage = "Smokeless tobacco price must be a currency value (e.g. '4.87' or '5')";
+			}
+			user.setDipPrice(request.body.dipPrice);
+		}
+		if (request.body.cigarPrice){
+			if (!PRICE_PATTERN.test(request.body.cigarPrice)){
+				status = 400;
+				responseMessage = "Cigar price must be a currency value (e.g. '3.90' or '3.9')";
+			}
+			user.setCigarPrice(request.body.cigarPrice);
+		}
+
+		user.save(function(err){
+			if (err) { return next(err); }
+
+			responseMessage = "Your information has been updated!";
+			// return response.json({
+			// 	message: "Your information has been updated!"
+			// });
+		});
+	});
+
+	response.status(status).json({message: responseMessage});
 });

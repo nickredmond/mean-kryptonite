@@ -7,7 +7,9 @@ var userSchema = new mongoose.Schema({
 	email: {type: String, unique: true},
 	hash: String,
 	salt: String,
+	token: String,
 	name: String,
+	hasUpdatedTobaccoCost: {type: Boolean, default: false},
 	stateOfResidence: String,
 	birthdate: Date,
 	quittingMethod: String,
@@ -17,8 +19,24 @@ var userSchema = new mongoose.Schema({
 	cigaretteBrand: {type: String, null: true},
 	dipBrand: {type: String, null: true},
 	cigarBrand: {type: String, null: true},
+	cigarettePrice: {type: Number, default: 0},
+	dipPrice: {type: Number, default: 0},
+	cigarPrice: {type: Number, default: 0},
 	dashboard: {type: mongoose.Schema.Types.ObjectId, ref: 'Dashboard'}
 });
+
+userSchema.methods.setCigarettePrice = function(price){
+	this.cigarettePrice = price;
+	this.hasUpdatedTobaccoCost = true;
+};
+userSchema.methods.setDipPrice = function(price){
+	this.dipPrice = price;
+	this.hasUpdatedTobaccoCost = true;
+};
+userSchema.methods.setCigarPrice = function(price){
+	this.cigarPrice = price;
+	this.hasUpdatedTobaccoCost = true;
+};
 
 userSchema.methods.setPassword = function(password){
 	this.salt = crypto.randomBytes(16).toString('hex');
@@ -33,11 +51,13 @@ userSchema.methods.generateJWT = function(){
 	var expiration = new Date(today);
 	expiration.setDate(today.getDate() + 14); // expires in 14 days
 
-	return jwt.sign({
+	var token = jwt.sign({
 		_id: this._id,
 		username: this.username,
 		exp: parseInt(expiration.getTime() / 1000)
 	}, 'SECRET'); // put the secret elsewhere!
+
+	return token;
 };
 
 mongoose.model('User', userSchema);

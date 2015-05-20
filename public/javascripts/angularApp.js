@@ -141,7 +141,8 @@ app.controller('SignupCtrl', [
 	'$state',
 	'auth',
 	'signup',
-	function($scope, $state, auth, signup){
+	'nav',
+	function($scope, $state, auth, signup, nav){
 		// TODO: Get dropdown arrays from server
 		populateStates();
 		populateCigaretteBrands();
@@ -171,9 +172,24 @@ app.controller('SignupCtrl', [
 			}
 			else {
 				auth.register($scope.user).error(function(error){
-					$scope.registrationErrors.push(error);
+					if (error.messages){
+						for (var i = 0; i < error.messages.length; i++){
+							$scope.registrationErrors.push(error.messages[i]);
+						}
+					}
+					else if (error.indexOf("E11000") > -1){
+						if (error.indexOf("username") > -1 && error.indexOf("duplicate key error") > -1){
+							$scope.registrationErrors.push("Username is already taken");
+						}
+						if (error.indexOf("email") > -1 && error.indexOf("duplicate key error") > -1){
+							$scope.registrationErrors.push("Email is already taken");
+						}
+					}
+					signup.goNextPage('Info');
 				}).then(function(){
-					$state.go('home');
+					$scope.registrationErrors = [];
+					nav.setActive('dashboardLink');
+					$state.go('dashboard');
 				});
 			}
 		};
@@ -192,7 +208,8 @@ app.controller('NavCtrl', [
 	'$state',
 	'auth',
 	'signup',
-	function($scope, $state, auth, signup){
+	'nav',
+	function($scope, $state, auth, signup, nav){
 		$scope.beginSignup = function(){
 			$scope.errors = [];
 			signup.beginSignup();
@@ -212,13 +229,13 @@ app.controller('NavCtrl', [
 			auth.logIn($scope.user).error(function(error){
 				$scope.errors.push(error.message);
 			}).then(function(){
-				//$scope.isLoggingIn = false;
-				$scope.setActive('dashboardLink');
+				$scope.errors = [];
+				nav.setActive('dashboardLink');
 				$state.go('dashboard');
 			});
 		};
 		$scope.logout = function(){
-			$scope.setActive('homeLink');
+			nav.setActive('homeLink');
 			auth.logOut();
 		};
 
@@ -230,27 +247,8 @@ app.controller('NavCtrl', [
 		$scope.isLoggedIn = function(){
 			return auth.isLoggedIn();
 		};
-
 		$scope.setActive = function(element_id){
-			var classList = document.getElementById(element_id).classList;
-			var userActiveElement = document.getElementsByClassName("userLinkActive")[0];
-			var activeElement = document.getElementsByClassName("active")[0];
-
-			$scope.errors = [];
-
-			if (userActiveElement){
-				userActiveElement.classList.remove("userLinkActive");
-			}
-			if (activeElement){
-				activeElement.classList.remove("active");
-			}
-
-			if (classList.contains("userLink")){
-				classList.add("userLinkActive");
-			}
-			else {
-				classList.add("active");
-			}
+			nav.setActive(element_id);
 		};
 	}
 ]);
@@ -308,6 +306,51 @@ app.controller('StoriesCtrl', [
 	}
 ]);
 
+app.controller('TobaccoCostCtrl', [
+	'$scope',
+	'$http',
+	'auth',
+	'userInfo',
+	function($scope, $http, auth, userInfo){
+		//userInfo.getTobaccoCost
+
+		$scope.tobaccoCostCallback = function(tobaccoCostInfo){
+			$scope.cigarettePrice = tobaccoCostInfo.cigarettePrice;
+			$scope.dipPrice = tobaccoCostInfo.dipPrice;
+			$scope.cigarPrice = tobaccoCostInfo.cigarPrice;
+			$scope.infoMessage = tobaccoCostInfo.infoMessage;
+			$scope.errorMessage = tobaccoCostInfo.errorMessage;
+		};
+		
+		userInfo.getTobaccoCost(auth.getId(), auth.getToken(), $scope.tobaccoCostCallback);
+
+		$scope.getTobaccoCost = function(){
+			alert("im getting tobacco cost");
+			// var user = {
+			// 	id: auth.getId(),
+			// 	token: auth.getToken()
+			// };
+
+			// $http.post('/tobaccoCost', user).success(function(data){
+			// 	$scope.cigarettePrice = data.cigarettePrice;
+			// 	$scope.dipPrice = data.dipPrice;
+			// 	$scope.cigarPrice = data.cigarPrice;
+			// 	$scope.infoMessage = data.infoMessage;
+			// }).error(function(error){
+			// 	$scope.errorMessage = error.message;
+			// });
+		};
+		$scope.tobaccoCostInfo = {
+			cigarettePrice: function(price){
+				if (price){
+					throw "Cannot set price from here... yet";
+				}
+
+			}
+		};
+	}
+]);
+
 app.factory('stories', [
 	'$http',
 	function($http){
@@ -349,17 +392,82 @@ app.factory('signup', [
 	}
 ]);
 
+app.factory('nav', ['$location', function($location){
+	var nav = {};
+
+	nav.setActive = function(element_id){
+		var classList = document.getElementById(element_id).classList;
+		var userActiveElement = document.getElementsByClassName("userLinkActive")[0];
+		var activeElement = document.getElementsByClassName("active")[0];
+
+		if (userActiveElement){
+			userActiveElement.classList.remove("userLinkActive");
+		}
+		if (activeElement){
+			activeElement.classList.remove("active");
+		}
+
+		if (classList.contains("userLink")){
+			classList.add("userLinkActive");
+		}
+		else {
+			classList.add("active");
+		}
+
+		//$location.path(url);
+	};
+
+	return nav;
+}]);
+
+app.factory('userInfo', ['$http', function($http){
+	var userInfo = {};
+
+	userInfo.getTobaccoCost = function(id, token, callback){
+		var user = {
+			id: id,
+			token: token
+		};
+		
+		$http.post('/tobaccoCost', user).success(function(data){
+			// userInfo.tobaccoCostInfo.cigarettePrice = data.cigarettePrice;
+			// userInfo.tobaccoCostInfo.dipPrice = data.dipPrice;
+			// userInfo.tobaccoCostInfo.cigarPrice = data.cigarPrice;
+			// userInfo.tobaccoCostInfo.infoMessage = data.infoMessage;
+			// userInfo.tobaccoCostInfo.errorMessage = data.errorMessage;
+
+			var tobaccoCostInfo = {
+				infoMessage: data.infoMessage,
+				errorMessage: data.errorMessage,
+				cigarettePrice: data.cigarettePrice,
+				dipPrice: data.dipPrice,
+				cigarPrice: data.cigarPrice
+			};
+			callback(tobaccoCostInfo);
+		}).error(function(err){ alert("errorific: " + JSON.stringify(err)); });
+	};
+
+	return userInfo;
+}]);
+
 app.factory('auth', ['$http', '$window', function($http, $window){
 	var auth = {
-		dashboard: {}
+		dashboard: {},
+		tobaccoPrices: {}
 	};
 
 	auth.saveToken = function(token){
 		$window.localStorage['nicotines-kryptonite-token'] = token;
 	};
+	auth.saveId = function(id){
+		$window.localStorage['user-id'] = id;
+	};
 	auth.getToken = function(){
 		return $window.localStorage['nicotines-kryptonite-token'];
 	};
+	auth.getId = function(){
+		return $window.localStorage['user-id'];
+	}
 	auth.isLoggedIn = function(){
 		var token = auth.getToken();
 		var isAuthenticated = false;
@@ -375,18 +483,20 @@ app.factory('auth', ['$http', '$window', function($http, $window){
 	auth.register = function(user){
 		return $http.post('/register', user).success(function(data){
 			auth.saveToken(data.token);
+			auth.saveId(data.id);
+			auth.dashboard = data.dashboard;
 		});
 	};
 	auth.logIn = function(user){
 		return $http.post('/dashboard', user).success(function(data){
 			auth.saveToken(data.token);
-			//alert('the dash: ' + data.dashboard.greeting);
+			auth.saveId(data.id);
 			auth.dashboard = data.dashboard;
-			//$window.localStorage['dashboard'] = data.dashboard;
 		});
 	};
 	auth.logOut = function(){
 		$window.localStorage.removeItem('nicotines-kryptonite-token');
+		$window.localStorage.removeItem('user-id');
 	};
 
 	return auth;
@@ -424,13 +534,20 @@ app.config([
 		$stateProvider.state('dashboard', {
 			url: '/dashboard',
 			templateUrl: '/dashboard.html',
-			controller: 'DashboardCtrl',
-			resolve: {
-				dashboard: ['$stateParams', function($stateParams){
-					return null;// D-<==>}}D:
-				}]
-			}
-});
+			controller: 'DashboardCtrl'
+		});
+		$stateProvider.state('tobaccoCost', {
+			url: '/tobaccoCost',
+			templateUrl: '/tobaccoCost.html',
+			controller: 'TobaccoCostCtrl',
+			// resolve: {
+			// 	tobaccoCostInfo: ['auth', 'userInfo', function(auth, userInfo){
+			// 		userInfo.getTobaccoCost(auth.getId(), auth.getToken(), function(tobaccoCostInfo){
+			// 			return tobaccoCostInfo;
+			// 		});
+			// 	}]
+			// }
+		});
 
 		$urlRouterProvider.otherwise('home');
 	}

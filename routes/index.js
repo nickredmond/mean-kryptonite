@@ -323,10 +323,13 @@ function authenticateUser(id, token, callback){
 		if (err) { 
 			callback(err, null); 
 		}
+		else if (!user){
+			callback("No user was found. Please log in again.", null);
+		}
 		else if (user.token !== token){
 			console.log("userT: " + JSON.stringify(user));
 			console.log("clientT: " + token);
-			callback("Invalid authentication token");
+			callback("Invalid authentication token. Please log in again.", null);
 		}
 		else callback(null, user);
 	});
@@ -334,7 +337,7 @@ function authenticateUser(id, token, callback){
 
 router.post('/tobaccoCost', function(request, response, next){
 	if (!request.body.id || ! request.body.token){
-		return response.status(400).json({message: "Could not authenticate user"});
+		return response.status(400).json({message: "Could not authenticate user. Please log in again."});
 	}
 
 	authenticateUser(request.body.id, request.body.token, function(err, user){
@@ -342,7 +345,7 @@ router.post('/tobaccoCost', function(request, response, next){
 			return response.status(400).json({message: err});
 		}
 		else if (!user){
-			return response.status(400).json({message: "Could not find user"});
+			return response.status(400).json({message: "Could not find user. Please log in again."});
 		}
 
 		var userMessage = user.hasUpdatedTobaccoCost ? null :
@@ -360,51 +363,44 @@ router.post('/tobaccoCost', function(request, response, next){
 
 router.post('/updateTobaccoCost', function(request, response, next){
 	var PRICE_PATTERN = /^\d+(?:\.\d{1,2})?$/;
-	var status = 200;
-	var responseMessage = "";
+
+	var sendResponse = function(status, message){
+		return response.status(status).json({message: message});
+	};
 
 	if (!request.body.id || ! request.body.token){
-		status = 403;
-		responseMessage: "Could not authenticate user";
+		return sendResponse(403, "Could not authenticate user. Please log in again.");
 	}
 
 	authenticateUser(request.body.id, request.body.token, function(err, user){
-		if (err || !user){
-			status = 401;
-			responseMessage = "Authentication failed! Please log in again";
+		if (err){
+			sendResponse(401, err);
 		}
-		
-		if (request.body.cigarettePrice){
-			if (!PRICE_PATTERN.test(request.body.cigarettePrice)){
-				status = 400;
-				responseMessage = "Cigarette price must be a currency value (e.g. '2.31' or '2')";
+		else {
+			if (request.body.cigarettePrice){
+				if (!PRICE_PATTERN.test(request.body.cigarettePrice)){
+					return sendResponse(400, "Cigarette price must be a currency value (e.g. '2.31' or '2')");
+				}
+				user.setCigarettePrice(request.body.cigarettePrice);
 			}
-			user.setCigarettePrice(request.body.cigarettePrice);
-		}
-		if (request.body.dipPrice){
-			if (!PRICE_PATTERN.test(request.body.dipPrice)){
-				status = 400;
-				responseMessage = "Smokeless tobacco price must be a currency value (e.g. '4.87' or '5')";
+			if (request.body.dipPrice){
+				if (!PRICE_PATTERN.test(request.body.dipPrice)){
+					return sendResponse(400, "Smokeless tobacco price must be a currency value (e.g. '4.87' or '5')");
+				}
+				user.setDipPrice(request.body.dipPrice);
 			}
-			user.setDipPrice(request.body.dipPrice);
-		}
-		if (request.body.cigarPrice){
-			if (!PRICE_PATTERN.test(request.body.cigarPrice)){
-				status = 400;
-				responseMessage = "Cigar price must be a currency value (e.g. '3.90' or '3.9')";
+			if (request.body.cigarPrice){
+				if (!PRICE_PATTERN.test(request.body.cigarPrice)){
+					return sendResponse(400, "Cigar price must be a currency value (e.g. '3.90' or '3.9')");
+				}
+				user.setCigarPrice(request.body.cigarPrice);
 			}
-			user.setCigarPrice(request.body.cigarPrice);
-		}
 
-		user.save(function(err){
-			if (err) { return next(err); }
+			user.save(function(err){
+				if (err) { return next(err); }
 
-			responseMessage = "Your information has been updated!";
-			// return response.json({
-			// 	message: "Your information has been updated!"
-			// });
-		});
+				sendResponse(200, "Your information has been updated!");
+			});
+		}
 	});
-
-	response.status(status).json({message: responseMessage});
 });

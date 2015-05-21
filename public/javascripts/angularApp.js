@@ -209,7 +209,8 @@ app.controller('NavCtrl', [
 	'auth',
 	'signup',
 	'nav',
-	function($scope, $state, auth, signup, nav){
+	'userInfo',
+	function($scope, $state, auth, signup, nav, userInfo){
 		$scope.beginSignup = function(){
 			$scope.errors = [];
 			signup.beginSignup();
@@ -240,6 +241,7 @@ app.controller('NavCtrl', [
 		};
 
 		$scope.showModal = false;
+
 		$scope.toggleModal = function(){
 			$scope.showModal = !$scope.showModal;
 		};
@@ -324,29 +326,22 @@ app.controller('TobaccoCostCtrl', [
 		
 		userInfo.getTobaccoCost(auth.getId(), auth.getToken(), $scope.tobaccoCostCallback);
 
-		$scope.getTobaccoCost = function(){
-			alert("im getting tobacco cost");
-			// var user = {
-			// 	id: auth.getId(),
-			// 	token: auth.getToken()
-			// };
+		$scope.updateTobaccoPrices = function(){
+			var updateData = {
+				cigarettePrice: $scope.cigarettePrice,
+				dipPrice: $scope.dipPrice,
+				cigarPrice: $scope.cigarPrice,
+				id: auth.getId(),
+				token: auth.getToken()
+			};
 
-			// $http.post('/tobaccoCost', user).success(function(data){
-			// 	$scope.cigarettePrice = data.cigarettePrice;
-			// 	$scope.dipPrice = data.dipPrice;
-			// 	$scope.cigarPrice = data.cigarPrice;
-			// 	$scope.infoMessage = data.infoMessage;
-			// }).error(function(error){
-			// 	$scope.errorMessage = error.message;
-			// });
-		};
-		$scope.tobaccoCostInfo = {
-			cigarettePrice: function(price){
-				if (price){
-					throw "Cannot set price from here... yet";
-				}
-
-			}
+			$http.post("/updateTobaccoCost", updateData).success(function(updateInfo){
+				$scope.errorMessage = null;
+				$scope.infoMessage = updateInfo.message;
+			}).error(function(err){
+				$scope.infoMessage = null;
+				$scope.errorMessage = err.message;
+			});
 		};
 	}
 ]);
@@ -430,12 +425,6 @@ app.factory('userInfo', ['$http', function($http){
 		};
 		
 		$http.post('/tobaccoCost', user).success(function(data){
-			// userInfo.tobaccoCostInfo.cigarettePrice = data.cigarettePrice;
-			// userInfo.tobaccoCostInfo.dipPrice = data.dipPrice;
-			// userInfo.tobaccoCostInfo.cigarPrice = data.cigarPrice;
-			// userInfo.tobaccoCostInfo.infoMessage = data.infoMessage;
-			// userInfo.tobaccoCostInfo.errorMessage = data.errorMessage;
-
 			var tobaccoCostInfo = {
 				infoMessage: data.infoMessage,
 				errorMessage: data.errorMessage,
@@ -444,7 +433,12 @@ app.factory('userInfo', ['$http', function($http){
 				cigarPrice: data.cigarPrice
 			};
 			callback(tobaccoCostInfo);
-		}).error(function(err){ alert("errorific: " + JSON.stringify(err)); });
+		}).error(function(err){ 
+			var tobaccoCostInfo = {
+				errorMessage: err.message
+			};
+			callback(tobaccoCostInfo);
+		});
 	};
 
 	return userInfo;

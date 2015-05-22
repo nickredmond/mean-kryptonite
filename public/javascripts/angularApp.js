@@ -328,8 +328,8 @@ app.controller('TobaccoCostCtrl', [
 				"My Financial Goal" : "Add a financial goal");
 			$scope.financialGoalButtonText = (tobaccoCostInfo.financialGoalItem ?
 				"Update" : "Add");
-			$scope.financialGoalItem = tobaccoCostInfo.financialGoalItem || "A new bicycle";
-			$scope.financialGoalCost = tobaccoCostInfo.financialGoalCost || 240;
+			$scope.financialGoalItem = tobaccoCostInfo.financialGoalItem;
+			$scope.financialGoalCost = tobaccoCostInfo.financialGoalCost;
 		};
 		
 		userInfo.getTobaccoCost(auth.getId(), auth.getToken(), $scope.tobaccoCostCallback);

@@ -327,8 +327,8 @@ function authenticateUser(id, token, callback){
 			callback("No user was found. Please log in again.", null);
 		}
 		else if (user.token !== token){
-			console.log("userT: " + JSON.stringify(user));
-			console.log("clientT: " + token);
+			//console.log("userT: " + JSON.stringify(user));
+			//console.log("clientT: " + token);
 			callback("Invalid authentication token. Please log in again.", null);
 		}
 		else callback(null, user);
@@ -336,7 +336,8 @@ function authenticateUser(id, token, callback){
 }
 
 router.post('/tobaccoCost', function(request, response, next){
-	if (!request.body.id || ! request.body.token){
+	console.log("back in black: " + JSON.stringify(request.body));
+	if (!request.body.id || !request.body.token){
 		return response.status(400).json({message: "Could not authenticate user. Please log in again."});
 	}
 
@@ -352,21 +353,36 @@ router.post('/tobaccoCost', function(request, response, next){
 				"We have pre-populated the amount you spend on tobacco based on our best guess. " +
 				"Feel free to change the amounts so they are more accurate.";
 
-		return response.json({
-			cigarettePrice: user.cigarettePrice,
-			dipPrice: user.dipPrice,
-			cigarPrice: user.cigarPrice,
-			infoMessage: userMessage
+		Dashboard.findById(user.dashboard).exec(function(error, dashboard){
+			if (error) { return next(error); }
+			//console.log("ruh roh: " + dashboard.dateQuit);
+
+			var userInfo = {
+				dateQuit: dashboard.dateQuit,
+				cigarettePrice: user.cigarettePrice,
+				dipPrice: user.dipPrice,
+				cigarPrice: user.cigarPrice,
+				infoMessage: userMessage
+			};
+
+			return response.status(200).json(userInfo);
 		});
 	});
 });
 
 router.post('/updateTobaccoCost', function(request, response, next){
 	var PRICE_PATTERN = /^\d+(?:\.\d{1,2})?$/;
+	var hasSentResponse = false;
 
 	var sendResponse = function(status, message){
-		return response.status(status).json({message: message});
+		if (!hasSentResponse){
+			hasSentResponse = true;
+			return response.status(status).json({message: message});
+		}
 	};
+	var isUpdatingDateQuit = function(req, user){
+		return (req.body.dateQuit && (req.body.dateQuit !== user.dashboard.dateQuit));
+	}
 
 	if (!request.body.id || ! request.body.token){
 		return sendResponse(403, "Could not authenticate user. Please log in again.");
@@ -377,23 +393,45 @@ router.post('/updateTobaccoCost', function(request, response, next){
 			sendResponse(401, err);
 		}
 		else {
+			var isUpdatingTobaccoPrices = false;
+
 			if (request.body.cigarettePrice){
 				if (!PRICE_PATTERN.test(request.body.cigarettePrice)){
 					return sendResponse(400, "Cigarette price must be a currency value (e.g. '2.31' or '2')");
 				}
-				user.setCigarettePrice(request.body.cigarettePrice);
+				else {
+					isUpdatingTobaccoPrices = true;
+					user.setCigarettePrice(request.body.cigarettePrice);
+				}
 			}
 			if (request.body.dipPrice){
 				if (!PRICE_PATTERN.test(request.body.dipPrice)){
 					return sendResponse(400, "Smokeless tobacco price must be a currency value (e.g. '4.87' or '5')");
 				}
+				isUpdatingTobaccoPrices = true;
 				user.setDipPrice(request.body.dipPrice);
 			}
 			if (request.body.cigarPrice){
 				if (!PRICE_PATTERN.test(request.body.cigarPrice)){
 					return sendResponse(400, "Cigar price must be a currency value (e.g. '3.90' or '3.9')");
 				}
-				user.setCigarPrice(request.body.cigarPrice);
+				else {
+					isUpdatingTobaccoPrices = true;
+					user.setCigarPrice(request.body.cigarPrice);
+				}
+			}
+			if (isUpdatingDateQuit(request, user)){
+				Dashboard.findById(user.dashboard).exec(function(errorMessage, dashboard){
+					if (errorMessage) { return next(errorMessage); }
+
+					dashboard.dateQuit = request.body.dateQuit;
+					dashboard.save(function(error){
+						if (error) {return next(error); }
+					});
+
+				});
+
+				sendResponse(200, "Your information has been updated!");
 			}
 
 			user.save(function(err){

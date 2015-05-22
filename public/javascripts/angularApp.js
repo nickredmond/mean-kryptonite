@@ -320,6 +320,7 @@ app.controller('TobaccoCostCtrl', [
 			$scope.cigarettePrice = tobaccoCostInfo.cigarettePrice;
 			$scope.dipPrice = tobaccoCostInfo.dipPrice;
 			$scope.cigarPrice = tobaccoCostInfo.cigarPrice;
+			$scope.dateQuit = new Date(tobaccoCostInfo.dateQuit);
 			$scope.infoMessage = tobaccoCostInfo.infoMessage;
 			$scope.errorMessage = tobaccoCostInfo.errorMessage;
 		};
@@ -331,6 +332,7 @@ app.controller('TobaccoCostCtrl', [
 				cigarettePrice: $scope.cigarettePrice,
 				dipPrice: $scope.dipPrice,
 				cigarPrice: $scope.cigarPrice,
+				dateQuit: $scope.dateQuit,
 				id: auth.getId(),
 				token: auth.getToken()
 			};
@@ -430,7 +432,8 @@ app.factory('userInfo', ['$http', function($http){
 				errorMessage: data.errorMessage,
 				cigarettePrice: data.cigarettePrice,
 				dipPrice: data.dipPrice,
-				cigarPrice: data.cigarPrice
+				cigarPrice: data.cigarPrice,
+				dateQuit: data.dateQuit
 			};
 			callback(tobaccoCostInfo);
 		}).error(function(err){ 
@@ -479,6 +482,10 @@ app.factory('auth', ['$http', '$window', function($http, $window){
 			auth.saveToken(data.token);
 			auth.saveId(data.id);
 			auth.dashboard = data.dashboard;
+
+			if (auth.dashboard.cravingLevel < 0) {
+				auth.dashboard.cravingLevel = 0;
+			}
 		});
 	};
 	auth.logIn = function(user){
@@ -486,6 +493,10 @@ app.factory('auth', ['$http', '$window', function($http, $window){
 			auth.saveToken(data.token);
 			auth.saveId(data.id);
 			auth.dashboard = data.dashboard;
+
+			if (auth.dashboard.cravingLevel < 0) {
+				auth.dashboard.cravingLevel = 0;
+			}
 		});
 	};
 	auth.logOut = function(){

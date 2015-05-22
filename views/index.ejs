@@ -41,7 +41,7 @@
   			<ul id="siteNav" class="nav nav-pills nav-stacked">
   				<li id="homeLink" ng-click="setActive('homeLink')" role="presentation" class="active"><a href="#/home">Home</a></li>
           <li id="dashboardLink" ng-click="setActive('dashboardLink')" ng-show="isLoggedIn()" role="presentation" class="userLink"><a href="#/dashboard">Dashboard</a></li>
-          <li id="tobaccoCostLink" ng-click="setActive('tobaccoCostLink')" ng-show="isLoggedIn()" role="presentation" class="userLink"><a href="#/tobaccoCost">My Tobacco Cost</a></li>
+          <li id="tobaccoCostLink" ng-click="setActive('tobaccoCostLink')" ng-show="isLoggedIn()" role="presentation" class="userLink"><a href="#/tobaccoCost">My Profile</a></li>
   				<li role="presentation"><a href="#">How We Can Help</a></li>
   				<li role="presentation"><a href="#">Resources</a></li>
   				<li role="presentation"><a href="#">Tobacco Facts</a></li>
@@ -92,17 +92,17 @@
               <h3 class="panel-title">First, lets get to know you!</h3><!-- TODO: add apostophre -->
             </div>
             <div class="panel-body">
-              <input ng-model="user.name" type="text" class="form-control signup-control" placeholder="Your Name" />
-              <div class="input-group signup-control">
+              <input ng-model="user.name" type="text" class="form-control user-form-control" placeholder="Your Name" />
+              <div class="input-group user-form-control">
                 <span class="input-group-addon">Birthdate</span>
-                <input type="date" class="form-control signup-control datepicker" placeholder="yyyy-MM-dd" ng-model="user.birthdate" />
+                <input type="date" class="form-control user-form-control datepicker" placeholder="yyyy-MM-dd" ng-model="user.birthdate" />
               </div>
-              <div class="input-group signup-control">
+              <div class="input-group user-form-control">
                 <span class="input-group-addon">State of Residence</span>
                 <select id="stateSelect" class="form-control"
                         ng-model="user.stateOfResidence"></select>
               </div>
-              <div class="input-group signup-control">
+              <div class="input-group user-form-control">
                 <span class="input-group-addon">How You Plan on Quitting</span>
                 <select class="form-control" ng-model="user.quittingMethod">
                   <option>Cold Turkey</option>
@@ -133,33 +133,33 @@
             </div>
             <div class="panel-body">
               <input type="text" 
-                     class="form-control signup-control"
+                     class="form-control user-form-control"
                      ng-model="user.cigarettesPerDay"
                      ng-show="user.selectedTobaccoTypes.indexOf('Cigarettes') > -1"
                      placeholder="Cigarettes smoked per day" />
               <input type="text" 
-                     class="form-control signup-control"
+                     class="form-control user-form-control"
                      ng-model="user.dipsPerDay"
                      ng-show="user.selectedTobaccoTypes.indexOf('Smokeless Tobacco') > -1"
                      placeholder="Dips/Pouches taken per day" />
                <input type="text" 
-                     class="form-control signup-control"
+                     class="form-control user-form-control"
                      ng-model="user.cigarsPerDay"
                      ng-show="user.selectedTobaccoTypes.indexOf('Cigars') > -1"
                      placeholder="Cigars smoked per day" />
-              <div class="input-group signup-control" 
+              <div class="input-group user-form-control" 
                    ng-show="user.selectedTobaccoTypes.indexOf('Cigarettes') > -1">
                 <span class="input-group-addon">Cigarette Brand</span>
                 <select id="cigaretteBrands" class="form-control"
                         ng-model="user.cigaretteBrand"></select>
               </div>
-              <div class="input-group signup-control"
+              <div class="input-group user-form-control"
                    ng-show="user.selectedTobaccoTypes.indexOf('Smokeless Tobacco') > -1">
                 <span class="input-group-addon">Smokeless Brand</span>
                 <select id="smokelessBrands" class="form-control"
                         ng-model="user.dipBrand"></select>
               </div>
-              <div class="input-group signup-control"
+              <div class="input-group user-form-control"
                    ng-show="user.selectedTobaccoTypes.indexOf('Cigars') > -1">
                 <span class="input-group-addon">Cigar Brand</span>
                 <select id="cigarBrands" class="form-control"
@@ -174,13 +174,13 @@
               <h3 class="panel-title">Now lets finalize your account!</h3>
             </div>
             <div class="panel-body">
-              <input type="text" class="form-control signup-control" placeholder="Username"
+              <input type="text" class="form-control user-form-control" placeholder="Username"
                      ng-model="user.username" />
-              <input type="text" class="form-control signup-control" placeholder="Email"
+              <input type="text" class="form-control user-form-control" placeholder="Email"
                      ng-model="user.email" />
-              <input type="password" class="form-control signup-control" placeholder="Password"
+              <input type="password" class="form-control user-form-control" placeholder="Password"
                      ng-model="user.password" />
-              <input type="password" class="form-control signup-control" placeholder="Confirm Password"
+              <input type="password" class="form-control user-form-control" placeholder="Confirm Password"
                      ng-model="user.passwordConfirmation" />
               <button class="signupButton btn btn-primary pull-right" ng-click="register()">Register!</span>
             </div>
@@ -216,19 +216,27 @@
         <h4>{{ infoMessage }}</h4>
       </div>
       <form ng-submit="updateTobaccoPrices()">
-        <div ng-show="cigarettePrice && cigarettePrice > 0" class="input-group signup-control">
-          <span class="input-group-addon">Cigarette Price (per pack)</span>
-          <input type="text" class="form-control" ng-model="cigarettePrice" />
+        <h3>Update your quit date</h3>
+        <div class="input-group user-form-control">
+          <span class="input-group-addon">My Quit Date</span>
+          <input type="date" class="form-control datepicker" placeholder="yyyy-MM-dd" ng-model="dateQuit" />
         </div>
-        <div ng-show="dipPrice && dipPrice > 0" class="input-group signup-control">
-          <span class="input-group-addon">Smokeless Price (per can/tin)</span>
-          <input type="text" class="form-control" ng-model="dipPrice" />
+        <div>
+          <h3>Update your tobacco prices <small>(So we know how much youll save)</small></h3>
+          <div ng-show="cigarettePrice && cigarettePrice > 0" class="input-group user-form-control">
+            <span class="input-group-addon">Cigarette Price (per pack)</span>
+            <input type="text" class="form-control" ng-model="cigarettePrice" />
+          </div>
+          <div ng-show="dipPrice && dipPrice > 0" class="input-group user-form-control">
+            <span class="input-group-addon">Smokeless Price (per can/tin)</span>
+            <input type="text" class="form-control" ng-model="dipPrice" />
+          </div>
+          <div ng-show="cigarPrice && cigarPrice > 0" class="input-group user-form-control">
+            <span class="input-group-addon">Cigar Price</span>
+            <input type="text" class="form-control"ng-model="cigarPrice" />
+          </div>
+          <button class="btn btn-primary formButton">Update Profile</button>
         </div>
-        <div ng-show="cigarPrice && cigarPrice > 0" class="input-group signup-control">
-          <span class="input-group-addon">Cigar Price</span>
-          <input type="text" class="form-control" ng-model="cigarPrice" />
-        </div>
-        <button class="btn btn-primary formButton">Update Prices</button>
       </form>
     </script>
   </body>

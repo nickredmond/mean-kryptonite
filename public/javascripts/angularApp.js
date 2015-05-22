@@ -323,16 +323,27 @@ app.controller('TobaccoCostCtrl', [
 			$scope.dateQuit = new Date(tobaccoCostInfo.dateQuit);
 			$scope.infoMessage = tobaccoCostInfo.infoMessage;
 			$scope.errorMessage = tobaccoCostInfo.errorMessage;
+
+			$scope.financialGoalTitle = (tobaccoCostInfo.financialGoalItem ?
+				"My Financial Goal" : "Add a financial goal");
+			$scope.financialGoalButtonText = (tobaccoCostInfo.financialGoalItem ?
+				"Update" : "Add");
+			$scope.financialGoalItem = tobaccoCostInfo.financialGoalItem || "A new bicycle";
+			$scope.financialGoalCost = tobaccoCostInfo.financialGoalCost || 240;
 		};
 		
 		userInfo.getTobaccoCost(auth.getId(), auth.getToken(), $scope.tobaccoCostCallback);
 
-		$scope.updateTobaccoPrices = function(){
+		$scope.updateProfile = function(){
 			var updateData = {
 				cigarettePrice: $scope.cigarettePrice,
 				dipPrice: $scope.dipPrice,
 				cigarPrice: $scope.cigarPrice,
 				dateQuit: $scope.dateQuit,
+
+				financialGoalItem: $scope.financialGoalItem,
+				financialGoalCost: $scope.financialGoalCost,
+
 				id: auth.getId(),
 				token: auth.getToken()
 			};
@@ -340,6 +351,7 @@ app.controller('TobaccoCostCtrl', [
 			$http.post("/updateTobaccoCost", updateData).success(function(updateInfo){
 				$scope.errorMessage = null;
 				$scope.infoMessage = updateInfo.message;
+				auth.updateDashboard();
 			}).error(function(err){
 				$scope.infoMessage = null;
 				$scope.errorMessage = err.message;
@@ -433,8 +445,11 @@ app.factory('userInfo', ['$http', function($http){
 				cigarettePrice: data.cigarettePrice,
 				dipPrice: data.dipPrice,
 				cigarPrice: data.cigarPrice,
-				dateQuit: data.dateQuit
+				dateQuit: data.dateQuit,
+				financialGoalItem: data.financialGoalItem,
+				financialGoalCost: data.financialGoalCost
 			};
+
 			callback(tobaccoCostInfo);
 		}).error(function(err){ 
 			var tobaccoCostInfo = {
@@ -498,6 +513,19 @@ app.factory('auth', ['$http', '$window', function($http, $window){
 				auth.dashboard.cravingLevel = 0;
 			}
 		});
+	};
+	auth.updateDashboard = function(){
+		var id = auth.getId();
+		var token = auth.getToken();
+
+		if (id && token){
+			var user = {
+				id: id,
+				token: token
+			};
+			return auth.logIn(user);
+		}
+		else alert("Cannot authenticate user. Please log in again.");
 	};
 	auth.logOut = function(){
 		$window.localStorage.removeItem('nicotines-kryptonite-token');

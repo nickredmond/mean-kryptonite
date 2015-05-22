@@ -215,7 +215,7 @@
       <div ng-show="infoMessage" class="alert alert-info">
         <h4>{{ infoMessage }}</h4>
       </div>
-      <form ng-submit="updateTobaccoPrices()">
+      <form>
         <h3>Update your quit date</h3>
         <div class="input-group user-form-control">
           <span class="input-group-addon">My Quit Date</span>
@@ -235,9 +235,21 @@
             <span class="input-group-addon">Cigar Price</span>
             <input type="text" class="form-control"ng-model="cigarPrice" />
           </div>
-          <button class="btn btn-primary formButton">Update Profile</button>
         </div>
       </form>
+      <form>
+        <h3>{{ financialGoalTitle }}</h3>
+        <p><small>Tell us what you would like to spend the money on that youll save from not buying tobacco!</small></p>
+        <div class="input-group user-form-control">
+          <span class="input-group-addon">Item</span>
+          <input type="text" class="form-control" ng-model="financialGoalItem" />
+        </div>
+        <div class="input-group user-form-control">
+          <span class="input-group-addon">Cost</span>
+          <input type="text" class="form-control" ng-model="financialGoalCost" />
+        </div>
+      </form>
+      <button id="updateProfileButton" class="btn btn-primary formButton" ng-click="updateProfile()">Update Profile</button>
     </script>
   </body>
 </html>

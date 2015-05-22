@@ -285,12 +285,16 @@ function handleLogin(user, response, next, info){
 			user.save(function(err){
 				if (err) { return next(err); }
 
+				var hasFinancialGoal = doc.financialGoal;
+
 				return response.json({token: user.generateJWT(),
 					id: user._id, 
 					dashboard: {
 						greeting: "Welcome",
 						firstName: user.name,
 						subgreeting: "You can do this!",
+						financialGoalCost: (hasFinancialGoal ? doc.financialGoalCost : -1),
+						moneySaved: 0, // TODO: update that shiznit
 						cravingLevel: Math.round((calculateCravingLevel(user) + 0.00001) * 100) / 100
 					}
 				});
@@ -302,20 +306,26 @@ function handleLogin(user, response, next, info){
 }	
 
 router.post('/dashboard', function(request, response, next){
-	if (!(request.body.username || request.body.email) || !request.body.password){
+	if (request.body.id && request.body.token){
+		authenticateUser(request.body.id, request.body.token, function(err, user){
+			if (user){
+				return handleLogin(user, response, next, null);
+			}
+			else if (err){
+				return response.status(400).json({message: "Could not authenticate. Please log in again."});
+			}
+		});
+	}
+	else if (!(request.body.username || request.body.email) || !request.body.password){
 		return response.status(400).json({message: 'Please fill out all fields'});
 	}
-
-	passport.authenticate('local', function(err, user, info){
-		if (err) { return next(err); }
-		
-		// var authUser = User.find({ 'username': user.username }).exec(function(err, doc){
-		// 	console.log('err: ' + err);
-		// 	console.log('doc: ' + JSON.stringify(doc));
-		// });
-		return handleLogin(user, response, next, info);
-		
-	})(request, response, next);
+	else {
+		passport.authenticate('local', function(err, user, info){
+			if (err) { return next(err); }
+			
+			return handleLogin(user, response, next, info);
+		})(request, response, next);
+	}
 });
 
 function authenticateUser(id, token, callback){
@@ -362,7 +372,9 @@ router.post('/tobaccoCost', function(request, response, next){
 				cigarettePrice: user.cigarettePrice,
 				dipPrice: user.dipPrice,
 				cigarPrice: user.cigarPrice,
-				infoMessage: userMessage
+				infoMessage: userMessage,
+				financialGoalItem: dashboard.financialGoal,
+				financialGoalCost: dashboard.financialGoalCost
 			};
 
 			return response.status(200).json(userInfo);
@@ -382,7 +394,10 @@ router.post('/updateTobaccoCost', function(request, response, next){
 	};
 	var isUpdatingDateQuit = function(req, user){
 		return (req.body.dateQuit && (req.body.dateQuit !== user.dashboard.dateQuit));
-	}
+	};
+	var isUpdatingFinancialGoal = function(req, user){
+		return (req.body.financialGoalItem && req.body.financialGoalCost);
+	};
 
 	if (!request.body.id || ! request.body.token){
 		return sendResponse(403, "Could not authenticate user. Please log in again.");
@@ -428,11 +443,23 @@ router.post('/updateTobaccoCost', function(request, response, next){
 					dashboard.save(function(error){
 						if (error) {return next(error); }
 					});
-
 				});
-
-				sendResponse(200, "Your information has been updated!");
 			}
+			if (isUpdatingFinancialGoal(request, user)){
+				if (!PRICE_PATTERN.test(request.body.financialGoalCost)){
+					return sendResponse(400, "Financial goal cost must be a currency value (e.g. '150' or '1532.47')");
+				}
+				else Dashboard.findById(user.dashboard).exec(function(errorMessage, dashboard){
+					if (errorMessage) { return next(errorMessage); }
+
+					dashboard.financialGoal = request.body.financialGoalItem;
+					dashboard.financialGoalCost = request.body.financialGoalCost;
+					dashboard.save(function(error){
+						if (error) {return next(error);}
+					});
+				});
+			}
+
 
 			user.save(function(err){
 				if (err) { return next(err); }

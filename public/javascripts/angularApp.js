@@ -124,6 +124,7 @@ app.controller('DashboardCtrl', [
 	'auth',
 	function($scope, auth){
 		$scope.dashboard = auth.dashboard;
+		//alert("dash: " + JSON.stringify($scope.dashboard));
 
 		var cravingBar = document.getElementById('cravingLevelBar');
 		if ($scope.dashboard.cravingLevel < 50){

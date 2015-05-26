@@ -19,10 +19,17 @@ var userSchema = new mongoose.Schema({
 	cigaretteBrand: {type: String, null: true},
 	dipBrand: {type: String, null: true},
 	cigarBrand: {type: String, null: true},
+
 	cigarettePrice: {type: Number, default: 0},
 	dipPrice: {type: Number, default: 0},
 	cigarPrice: {type: Number, default: 0},
-	dashboard: {type: mongoose.Schema.Types.ObjectId, ref: 'Dashboard'}
+	gumPrice: {type: Number, default: 0},
+	patchPrice: {type: Number, default: 0},
+	lozengePrice: {type: Number, default: 0},
+	ecigPrice: {type: Number, default: 0},
+
+	dashboard: {type: mongoose.Schema.Types.ObjectId, ref: 'Dashboard'},
+	nicotineUsages: [{type: mongoose.Schema.Types.ObjectId, ref: 'NicotineUsage'}]
 });
 
 userSchema.methods.setCigarettePrice = function(price){

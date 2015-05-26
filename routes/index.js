@@ -180,6 +180,18 @@ router.post('/register', function(request, response, next){
 		});
 	}
 
+	switch (user.quittingMethod){
+		case "Nicotine Gum":
+			// TODO: implement setting users' NRT prices
+			break;
+		case "Nicotine Lozenges":
+			break;
+		case "Nicotine Patches":
+			break;
+		case "Electronic Cigarettes":
+			break;
+	}
+
 	user.save(function(err){
 		if (err) { return next(err); }
 		return handleLogin(user, response, next, null);//response.json({token: user.generateJWT()});
@@ -238,15 +250,12 @@ router.get('/stories/:story', function(request, response){
 	response.json(request.story);
 });
 
-function calculateCravingLevel(user){
-	console.log('user: ' + user.email);
-
-	var dateQuit = user.dashboard.dateQuit;
+function daysSinceQuit(dateQuit){
 	var difference = new Date().getTime() - dateQuit.getTime();
 
 	var days = Math.floor(difference / (1000 * 60 * 60 * 24));
  	difference -= days * (1000 * 60 * 60 * 24);
- 	console.log('date: ' + dateQuit);
+ 	
  	var hours = Math.floor(difference / (1000 * 60 * 60));
  	days += (hours / 24);
  	difference -= hours * (1000 * 60 * 60);
@@ -255,10 +264,14 @@ function calculateCravingLevel(user){
  	days += (minutes / (24 * 60));
  	difference -= minutes * (1000 * 60);
 
+ 	return days;
+}
+
+function calculateCravingLevel(user){
  	var cravingLevel = 0;
- 	console.log('days: ' + days + ', hours: ' + hours + ', minutes: ' + minutes);
  	var maxCravingValue = 3.2;
 
+ 	var days = daysSinceQuit(user.dashboard.dateQuit);
  	var normalizedDays = days / 2;
 
  	if (normalizedDays < 0.83){
@@ -302,6 +315,29 @@ function handleLogin(user, response, next, info){
 		});
 	} else {
 		return response.status(401).json(info);
+	}
+}
+
+function calculateMoneySaved(user){
+	var CIGARETTES_PER_PACK = 20;
+	var DIPS_PER_CAN = 8;
+
+	var daysQuit = daysSinceQuit(user.dashboard.dateQuit);
+	var grossCost = 0;
+
+	if (user.cigaretteBrand) {
+		grossCost += user.cigarettePrice * (user.cigarettesPerDay / CIGARETTES_PER_PACK) * daysQuit;
+	}
+	if (user.dipBrand){
+		grossCost += user.dipPrice * (user.dipsPerDay / DIPS_PER_CAN) * daysQuit;
+	}
+	if (user.cigarBrand){
+		grossCost += user.cigarPrice * user.cigarsPerDay * daysQuit;
+	}
+
+	// calculate how money the user actually spent (netCost)
+	for (var i = 0; i < user.nicotineUsages.length; i++){
+		var usageInfo = user.nicotineUsages[i];
 	}
 }	
 

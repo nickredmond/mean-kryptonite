@@ -83,6 +83,9 @@ function populateCigarBrands(){
 	}
 }
 
+function roundToTwoPlaces(value){
+	return (Math.round((value + 0.00001) * 100) / 100);
+}
 
 //--- ANGULAR APP CONSTRUCTION ---//
 var app = angular.module('nicotinesKryptonite', ['ui.router']);
@@ -124,7 +127,11 @@ app.controller('DashboardCtrl', [
 	'auth',
 	function($scope, auth){
 		$scope.dashboard = auth.dashboard;
-		//alert("dash: " + JSON.stringify($scope.dashboard));
+		$scope.dashboard.percentTowardGoal = 100 * ($scope.dashboard.moneySaved / $scope.dashboard.financialGoalCost);
+
+		$scope.roundToTwoPlaces = function(value){
+			return roundToTwoPlaces(value);
+		}
 
 		var cravingBar = document.getElementById('cravingLevelBar');
 		if ($scope.dashboard.cravingLevel < 50){

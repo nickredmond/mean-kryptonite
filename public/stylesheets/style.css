@@ -93,3 +93,23 @@ a {
 #updateProfileButton {
 	margin-top: 20px;
 }
+
+.keyLabel {
+	color: transparent;
+}
+
+.successColorLabel {
+	background-color: #5cb85c;
+}
+
+.infoColorLabel {
+	background-color: #5bc0de;
+}
+
+#financialGoalProgressBar {
+	margin-bottom: 10px;
+}
+
+.legendRow {
+	padding-top: 5px;
+}

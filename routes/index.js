@@ -307,8 +307,8 @@ function handleLogin(user, response, next, info){
 						firstName: user.name,
 						subgreeting: "You can do this!",
 						financialGoalCost: (hasFinancialGoal ? doc.financialGoalCost : -1),
-						moneySaved: 0, // TODO: update that shiznit
-						cravingLevel: Math.round((calculateCravingLevel(user) + 0.00001) * 100) / 100
+						moneySaved: 1399, // TODO: update that shiznit
+						cravingLevel: calculateCravingLevel(user)
 					}
 				});
 			});

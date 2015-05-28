@@ -180,21 +180,46 @@ router.post('/register', function(request, response, next){
 		});
 	}
 
-	switch (user.quittingMethod){
-		case "Nicotine Gum":
-			// TODO: implement setting users' NRT prices
-			break;
-		case "Nicotine Lozenges":
-			break;
-		case "Nicotine Patches":
-			break;
-		case "Electronic Cigarettes":
-			break;
+	/**
+		nrtBrand syntax: Equate - 4mg - 24 ct.
+						 brandName [- strength [- # ct.]]
+	*/
+	if (request.body.nrtBrand){
+		var AMOUNT_GIVEN_LENGTH = 3;
+
+		var brandTokens = request.body.nrtBrand.split('-');
+
+		if (brandTokens.length === AMOUNT_GIVEN_LENGTH){
+			user.nrtBrand = brandTokens[0].trim() + " - " + brandTokens[1].trim();
+			user.amountPerUnit = brandTokens[2].trim().split(' ')[0];
+		}
+		else {
+			user.nrtBrand = brandTokens.join("-").trim();
+		}
+
+		var tobaccoTypeMappings = {};
+		tobaccoTypeMappings["Nicotine Gum"] = "gum";
+		tobaccoTypeMappings["Nicotine Lozenges"] = "lozenge";
+		tobaccoTypeMappings["Nicotine Patches"] = "patch";
+		tobaccoTypeMappings["Electronic Cigarettes"] = "ecig";
+
+		var tobaccoType = tobaccoTypeMappings[user.quittingMethod];
+
+		TobaccoPricing.findOne({
+			'tobaccoType': tobaccoType,
+			'brandName': user.nrtBrand,
+			'amountPerUnit': user.amountPerUnit || null
+		})
+		.limit(1)
+		.exec(function(err, tobaccoPricing){
+			if (err) { return next(err); }
+			user.nrtPricing = tobaccoPricing;
+		});
 	}
 
 	user.save(function(err){
 		if (err) { return next(err); }
-		return handleLogin(user, response, next, null);//response.json({token: user.generateJWT()});
+		return handleLogin(user, response, next, null);
 	});
 });
 
@@ -307,7 +332,7 @@ function handleLogin(user, response, next, info){
 						firstName: user.name,
 						subgreeting: "You can do this!",
 						financialGoalCost: (hasFinancialGoal ? doc.financialGoalCost : -1),
-						moneySaved: 1399, // TODO: update that shiznit
+						moneySaved: calculateMoneySaved(user),
 						cravingLevel: calculateCravingLevel(user)
 					}
 				});
@@ -321,9 +346,13 @@ function handleLogin(user, response, next, info){
 function calculateMoneySaved(user){
 	var CIGARETTES_PER_PACK = 20;
 	var DIPS_PER_CAN = 8;
+	//var LOZENGES_PER_BOTTLE = 24;
+	//var GUM_PIECES_PER_PACK = 20;
+	//var PATCHES_PER_CARTON = 24;
 
 	var daysQuit = daysSinceQuit(user.dashboard.dateQuit);
 	var grossCost = 0;
+	var actualCost = 0;
 
 	if (user.cigaretteBrand) {
 		grossCost += user.cigarettePrice * (user.cigarettesPerDay / CIGARETTES_PER_PACK) * daysQuit;
@@ -338,7 +367,34 @@ function calculateMoneySaved(user){
 	// calculate how money the user actually spent (netCost)
 	for (var i = 0; i < user.nicotineUsages.length; i++){
 		var usageInfo = user.nicotineUsages[i];
+
+		switch (usageInfo.nicotineType){
+			case 'cigarette':
+				actualCost += (usageInfo.quantityUsed / CIGARETTES_PER_PACK) * user.cigarettePrice;
+				break;
+			case 'smokeless':
+				actualCost += (usageInfo.quantityUsed / DIPS_PER_CAN) * user.dipPrice;
+				break;
+			case 'cigar':
+				actualCost += usageInfo.quantityUsed * user.cigarPrice;
+				break;
+			case 'patch':
+				actualCost += (usageInfo.quantityUsed / user.patchesPerCarton) * user.patchPrice;
+				break;
+			case 'gum':
+				actualCost += (usageInfo.quantityUsed / user.gumPiecesPerPack) * user.gumPrice;
+				break;
+			case 'lozenge':
+				actualCost += (usageInfo.quantityUsed / user.lozengesPerBottle) * user.lozengePrice;
+				break;
+			case 'ecig':
+				actualCost += usageInfo.quantityUsed * user.egicPrice;
+				break;
+		}
+
 	}
+
+	return grossCost - actualCost;
 }	
 
 router.post('/dashboard', function(request, response, next){
@@ -504,4 +560,37 @@ router.post('/updateTobaccoCost', function(request, response, next){
 			});
 		}
 	});
+});
+
+router.get('/nrtBrands', function(request, response, next){
+	var quittingMethod = request.query.quittingMethod;
+
+	var methodMappings = {};
+
+	methodMappings["Nicotine Gum"] = "gum";
+	methodMappings["Nicotine Lozenges"] = "lozenge";
+	methodMappings["Nicotine Patches"] = "patch";
+	methodMappings["Electronic Cigarettes"] = "ecig";
+
+	if (methodMappings[quittingMethod]){
+		TobaccoPricing.find({
+			state: 'UT',
+			tobaccoType: methodMappings[quittingMethod],
+		}).exec(function(err, tobaccoPricings){
+			var brandNames = [];
+			for (var i = 0; i < tobaccoPricings.length; i++){
+				var brandName = tobaccoPricings[i].brandName;
+				if (tobaccoPricings[i].amountPerUnit){
+					brandName += " - " + tobaccoPricings[i].amountPerUnit + " ct.";
+				}
+
+				brandNames.push(brandName);
+			}
+
+			return response.json({brandNames: brandNames});
+		});
+	}
+	else {
+		return response.json({brandNames: null});
+	}
 });

@@ -104,13 +104,14 @@
               </div>
               <div class="input-group user-form-control">
                 <span class="input-group-addon">How You Plan on Quitting</span>
-                <select class="form-control" ng-model="user.quittingMethod">
-                  <option>Cold Turkey</option>
-                  <option>Nicotine Gum</option>
-                  <option>Nicotine Lozenges</option>
-                  <option>Nicotine Patches</option>
-                  <option>Electronic Cigarettes</option>
-                  <option>Weening</option>
+                <select ui-select2 ng-change="quittingMethodSelected(method)" class="form-control" ng-model="method">
+                  <option ng-repeat="method in quittingMethods">{{ method }}</option>
+                </select>
+              </div>
+              <div class="input-group user-form-control" ng-show="nrtBrands && nrtBrands.length > 0">
+                <span class="input-group-addon">Nicotine Brand</span>
+                <select class="form-control" ng-model="user.nrtBrand">
+                  <option ng-repeat="brand in nrtBrands">{{ brand }}</option>
                 </select>
               </div>
               <div class="input-group">

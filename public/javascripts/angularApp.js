@@ -164,6 +164,23 @@ app.controller('SignupCtrl', [
 			selectedTobaccoTypes: []
 		};
 
+		$scope.quittingMethods = [
+			"Cold Turkey",
+            "Nicotine Gum",
+            "Nicotine Lozenges",
+            "Nicotine Patches",
+          	"Electronic Cigarettes",
+          	"Weening"
+		];
+		$scope.quittingMethodSelected = function(method){
+			signup.getNrtBrands(method, function(brandNames){
+				$scope.nrtBrands = brandNames;
+			});
+		};
+		$scope.getCurrentNrtMethod = function(method){
+			return signup.brandNames;
+		};
+
 		$scope.toggleTobaccoSelection = function(tobaccoType){
 			var index = $scope.user.selectedTobaccoTypes.indexOf(tobaccoType);
 
@@ -179,6 +196,8 @@ app.controller('SignupCtrl', [
 				$scope.registrationErrors.push('Password and confirmation do not match');
 			}
 			else {
+				$scope.user.quittingMethod = $scope.method;
+
 				auth.register($scope.user).error(function(error){
 					if (error.messages){
 						for (var i = 0; i < error.messages.length; i++){
@@ -390,19 +409,24 @@ app.factory('stories', [
 	}
 ]);
 
-app.factory('signup', [
-	function(){
+app.factory('signup', ['$http',
+	function($http){
 		var service = { currentSignupPage: 'None'
 		};
 
 		service.getSignupPage = function(){
-			return currentSignupPage;
+			return service.currentSignupPage;
 		};
 		service.goNextPage = function(pageTitle){
-			currentSignupPage = pageTitle;
+			service.currentSignupPage = pageTitle;
 		};
 		service.beginSignup = function(){
-			currentSignupPage = 'Intro';
+			service.currentSignupPage = 'Intro';
+		};
+		service.getNrtBrands = function(method, callback){
+			$http.get('/nrtBrands?quittingMethod=' + method).success(function(data){
+				callback(data.brandNames);
+			});
 		};
 
 		return service;

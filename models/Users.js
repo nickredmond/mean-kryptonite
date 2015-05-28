@@ -28,7 +28,15 @@ var userSchema = new mongoose.Schema({
 	lozengePrice: {type: Number, default: 0},
 	ecigPrice: {type: Number, default: 0},
 
+	gumPiecesPerPack: {type: Number, default: 0},
+	patchesPerCarton: {type: Number, default: 0},
+	lozengesPerBottle: {type: Number, default: 0},
+
+	// patchPricing: {type: mongoose.Schema.Types.ObjectId, ref: 'TobaccoPricing'},
+	// gumPricing: {type: mongoose.Schema.Types.ObjectId, ref: 'TobaccoPricing'},
+
 	dashboard: {type: mongoose.Schema.Types.ObjectId, ref: 'Dashboard'},
+	nrtPricing: {type: mongoose.Schema.Types.ObjectId, ref: 'TobaccoPricing'},
 	nicotineUsages: [{type: mongoose.Schema.Types.ObjectId, ref: 'NicotineUsage'}]
 });
 

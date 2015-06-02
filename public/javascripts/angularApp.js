@@ -459,7 +459,6 @@ app.factory('nav', ['$location', function($location){
 	var nav = {};
 
 	nav.setActive = function(element_id){
-		var classList = document.getElementById(element_id).classList;
 		var userActiveElement = document.getElementsByClassName("userLinkActive")[0];
 		var activeElement = document.getElementsByClassName("active")[0];
 
@@ -470,11 +469,15 @@ app.factory('nav', ['$location', function($location){
 			activeElement.classList.remove("active");
 		}
 
-		if (classList.contains("userLink")){
-			classList.add("userLinkActive");
-		}
-		else {
-			classList.add("active");
+		if (element_id !== 'none'){
+			var classList = document.getElementById(element_id).classList;
+
+			if (classList.contains("userLink")){
+				classList.add("userLinkActive");
+			}
+			else {
+				classList.add("active");
+			}
 		}
 
 		//$location.path(url);

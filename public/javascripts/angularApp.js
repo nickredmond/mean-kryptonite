@@ -93,10 +93,13 @@ var app = angular.module('nicotinesKryptonite', ['ui.router']);
 app.controller('HomeCtrl', [
 	'$scope',
 	'$interval',
+	'$stateParams',
 	'stories',
 	'auth',
 	'signup',
-	function($scope, $interval, stories, auth, signup){
+	function($scope, $interval, $stateParams, stories, auth, signup){
+		$scope.errorMessage = $stateParams.errorMessage;
+
 		$scope.deathToll = 0;
 		var topStory = stories.topStory;
 		$scope.homeStoryImageUri = topStory.imageUri;
@@ -275,7 +278,7 @@ app.controller('NavCtrl', [
 		};
 
 		$scope.isLoggedIn = function(){
-			return auth.isLoggedIn();
+			return auth.isLoggedIn(null);
 		};
 		$scope.setActive = function(element_id){
 			nav.setActive(element_id);
@@ -537,7 +540,7 @@ app.factory('auth', ['$http', '$window', function($http, $window){
 	auth.getId = function(){
 		return $window.localStorage['user-id'];
 	}
-	auth.isLoggedIn = function(){
+	auth.isLoggedIn = function($q){
 		var token = auth.getToken();
 		var isAuthenticated = false;
 
@@ -546,7 +549,19 @@ app.factory('auth', ['$http', '$window', function($http, $window){
 			isAuthenticated = payload.exp > Date.now() / 1000;
 		}
 
-		return isAuthenticated;
+		if ($q){
+			var deferred = $q.defer();
+
+			if (isAuthenticated){
+				deferred.resolve();
+			}
+			else {
+				deferred.reject('You must be logged in to view that page.');
+			}
+
+			return deferred.promise;
+		}
+		else return isAuthenticated;
 	};
 	// OMITTED currentUser function: don't think I need it
 	auth.register = function(user){
@@ -582,7 +597,6 @@ app.factory('auth', ['$http', '$window', function($http, $window){
 			};
 			return auth.logIn(user);
 		}
-		else alert("Cannot authenticate user. Please log in again.");
 	};
 	auth.logOut = function(){
 		$window.localStorage.removeItem('nicotines-kryptonite-token');
@@ -604,7 +618,8 @@ app.config([
 				storyPromise: ['stories', function(stories){
 					return stories.retrieveTopStory();
 				}]
-			}
+			},
+			params: {errorMessage: null}
 		});
 		$stateProvider.state('signup', {
 			url: '/signup',
@@ -628,20 +643,16 @@ app.config([
 			resolve: {
 				dashboard: ['auth', function(auth){
 					return auth.updateDashboard();
+				}],
+				authenticated: ['$q', 'auth', function($q, auth){
+					return auth.isLoggedIn($q);
 				}]
 			}
 		});
 		$stateProvider.state('tobaccoCost', {
 			url: '/tobaccoCost',
 			templateUrl: '/tobaccoCost.html',
-			controller: 'TobaccoCostCtrl',
-			// resolve: {
-			// 	tobaccoCostInfo: ['auth', 'userInfo', function(auth, userInfo){
-			// 		userInfo.getTobaccoCost(auth.getId(), auth.getToken(), function(tobaccoCostInfo){
-			// 			return tobaccoCostInfo;
-			// 		});
-			// 	}]
-			// }
+			controller: 'TobaccoCostCtrl'
 		});
 
 		$urlRouterProvider.otherwise('home');
@@ -667,4 +678,10 @@ app.filter('truncate', function () {
 
         return value + (tail || ' …');
     };
+});
+
+app.run(function($rootScope, $state, $log){
+	$rootScope.$on('$stateChangeError', function(event, toState, toParams, fromState, fromParams, error){
+		$state.go('home', {errorMessage: error});
+	});
 });

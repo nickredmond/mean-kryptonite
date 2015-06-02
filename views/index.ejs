@@ -57,7 +57,9 @@
   	</div>
     
    <script type="text/ng-template" id="/home.html">
-
+      <div ng-show="errorMessage" class="alert alert-danger">
+        <h4 class="errorMessage">{{ errorMessage }}</h4>
+      </div>
       <div class="page-header" style="margin-top: 0;">
         <!-- add the apostophre when Im not devving anymore -->
         <h1 style="margin-top: 0;">Nicotines Kryptonite<br /><small>Helping you help yourself</small></h1>

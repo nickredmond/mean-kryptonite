@@ -285,18 +285,18 @@
               <input ng-model="usage.date" type="date" class="form-control datepicker" placeholder="yyyy-MM-dd" />
             </td>
             <td> 
-              <select ng-model="usage.nicotineType">
+              <select ng-model="usage.nicotineType" class="form-control">
                 <option>Cigarettes</option>
                 <option>Smokeless Tobacco</option>
                 <option>Cigars</option>
-                <option>Nicotine Gum</option>
+                <!--<option>Nicotine Gum</option>-->
                 <option>Nicotine Lozenges</option>
-                <option>Nicotine Patches</option>
-                <option>Electronic Cigarettes</option>
+                <!--<option>Nicotine Patches</option>-->
+                <!--<option>Electronic Cigarettes</option>-->
               </select>
             </td>
             <td>
-              <input type="text" ng-model="usage.quantity" />
+              <input type="text" class="form-control" ng-model="usage.quantity" />
             </td>
           </tr>
         </table>

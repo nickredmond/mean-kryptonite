@@ -6,14 +6,14 @@ var EMAIL_REGEX = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"
 //--- HELPER FUNCTIONS ---//
 function populateStates(){
 	var statesList = [
-			'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'D.C.', 'DE', 'FL',
+			/*'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'D.C.', 'DE', 'FL',
 			'GA', 'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA',
 			'ME', 'MD', 'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE',
 			'NV', 'NH', 'NJ', 'NM', 'NY', 'NC', 'ND', 'OH', 'OK',
-			'OR', 'PA', 'RI', 'SC', 'SD', 'TN', 'TX', 'UT', 'VT',
+			'OR', 'PA', 'RI', 'SC', 'SD', 'TN', 'TX',*/ 'UT'/*, 'VT',
 			'VA', 'WA', 'WV', 'WI', 'WY', 'Puerto Rico', 'American Samoa',
 			'Guam', 'Northern Mariana Islands', 'U.S. Virgin Islands',
-			'Outside the U.S.'
+			'Outside the U.S.'*/
 	];
 
 	var stateSelect = document.getElementById('stateSelect');
@@ -30,8 +30,8 @@ function populateStates(){
 
 function populateCigaretteBrands(){
 	var cigaretteBrands = [
-		'Marlboro', 'Camel', 'L&M', 'Newport', 'Dunhill',
-		'Pall Mall', 'Winston', 'Parliament'
+		'Marlboro'/*, 'Camel', 'L&M', 'Newport', 'Dunhill',
+		'Pall Mall', 'Winston', 'Parliament'*/
 	];
 
 	var cigSelect = document.getElementById('cigaretteBrands');
@@ -48,9 +48,9 @@ function populateCigaretteBrands(){
 
 function populateSmokelessBrands(){
 	var smokelessBrands = [
-		'Copenhagen', 'Skoal', 'Husky', 'Grizzly', 'Kodiak',
+		'Copenhagen'/*, 'Skoal', 'Husky', 'Grizzly', 'Kodiak',
 		'Red Man', 'Levi Garrett', 'Longhorn', 'Marlboro',
-		'Camel', 'Lucky Strike', 'Knox'
+		'Camel', 'Lucky Strike', 'Knox'*/
 	];
 
 	var smokelessSelect = document.getElementById('smokelessBrands');
@@ -67,8 +67,8 @@ function populateSmokelessBrands(){
 
 function populateCigarBrands(){
 	var cigarBrands = [
-		'ACID', 'Macanudo', 'H. Upmann', 'Ashton', 'Montecristo',
-		'Romeo y Julieta', 'Padron'
+		'ACID'/*, 'Macanudo', 'H. Upmann', 'Ashton', 'Montecristo',
+		'Romeo y Julieta', 'Padron'*/
 	];
 
 	var cigarSelect = document.getElementById('cigarBrands');
@@ -127,9 +127,10 @@ app.controller('HomeCtrl', [
 
 app.controller('DashboardCtrl', [
 	'$scope',
+	'$interval',
 	'auth',
 	'dashboard',
-	function($scope, auth, dashboard){
+	function($scope, $interval, auth, dashboard){
 		$scope.dashboard = auth.dashboard;
 		$scope.dashboard.percentTowardGoal = 100 * ($scope.dashboard.moneySaved / $scope.dashboard.financialGoalCost);
 
@@ -145,6 +146,10 @@ app.controller('DashboardCtrl', [
 			cravingBar.classList.add("progress-bar-warning");
 		}
 		else cravingBar.classList.add("progress-bar-danger");
+
+		$interval(function(){
+			auth.updateDashboard();
+		}, (60000 * 2));
 	}
 ]);
 
@@ -170,11 +175,11 @@ app.controller('SignupCtrl', [
 
 		$scope.quittingMethods = [
 			"Cold Turkey",
-            "Nicotine Gum",
+            // "Nicotine Gum",
             "Nicotine Lozenges",
-            "Nicotine Patches",
-          	"Electronic Cigarettes",
-          	"Weening"
+            // "Nicotine Patches",
+          	// "Electronic Cigarettes",
+          	// "Weening"
 		];
 		$scope.quittingMethodSelected = function(method){
 			signup.getNrtBrands(method, function(brandNames){
@@ -458,7 +463,7 @@ app.factory('signup', ['$http',
 	}
 ]);
 
-app.factory('nav', ['$location', function($location){
+app.factory('nav', ['$location', '$window', function($location, $window){
 	var nav = {};
 
 	nav.setActive = function(element_id){
@@ -472,18 +477,25 @@ app.factory('nav', ['$location', function($location){
 			activeElement.classList.remove("active");
 		}
 
-		if (element_id !== 'none'){
-			var classList = document.getElementById(element_id).classList;
+		if (element_id && element_id !== 'undefined'){
+			if (element_id !== 'none'){
+				var classList = document.getElementById(element_id).classList;
 
-			if (classList.contains("userLink")){
-				classList.add("userLinkActive");
+				if (classList.contains("userLink")){
+					classList.add("userLinkActive");
+				}
+				else {
+					classList.add("active");
+				}
 			}
-			else {
-				classList.add("active");
-			}
+			$window.localStorage['active-nav-id'] = element_id;
 		}
-
-		//$location.path(url);
+		else {
+			nav.setActive('homeLink');
+		}
+	};
+	nav.getActive = function(){
+		return $window.localStorage['active-nav-id'];
 	};
 
 	return nav;
@@ -563,7 +575,6 @@ app.factory('auth', ['$http', '$window', function($http, $window){
 		}
 		else return isAuthenticated;
 	};
-	// OMITTED currentUser function: don't think I need it
 	auth.register = function(user){
 		return $http.post('/register', user).success(function(data){
 			auth.saveToken(data.token);
@@ -680,8 +691,12 @@ app.filter('truncate', function () {
     };
 });
 
-app.run(function($rootScope, $state, $log){
+app.run(['$rootScope', '$state', 'nav', 'signup', function($rootScope, $state, nav, signup){
 	$rootScope.$on('$stateChangeError', function(event, toState, toParams, fromState, fromParams, error){
 		$state.go('home', {errorMessage: error});
 	});
-});
+	$rootScope.$on('$locationChangeSuccess', function () {
+        nav.setActive(nav.getActive());
+        signup.goNextPage('Intro');
+    });
+}]);

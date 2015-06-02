@@ -16,14 +16,16 @@ var Story = mongoose.model('Story');
 var Dashboard = mongoose.model('Dashboard');
 //Story.remove({}); // removes all Stories
 var TobaccoPricing = mongoose.model('TobaccoPricing');
+var NicotineUsage = mongoose.model('NicotineUsage');
 
-// var pricing = new TobaccoPricing({
-// 	tobaccoType: 'cigarette',
-// 	brandName: 'Marlboro',
-// 	state: 'UT',
-// 	averagePrice: 7
-// });
-// pricing.save();
+var nicotineTypeMappings = {};
+nicotineTypeMappings["Cigarettes"] = "cigarette";
+nicotineTypeMappings["Smokeless Tobacco"] = "smokeless";
+nicotineTypeMappings["Cigars"] = "cigar";
+nicotineTypeMappings["Nicotine Gum"] = "gum";
+nicotineTypeMappings["Nicotine Lozenges"] = "lozenge";
+nicotineTypeMappings["Nicotine Patches"] = "patch";
+nicotineTypeMappings["Electronic Cigarettes"] = "ecig";
 
 var auth = jwt({secret: 'SECRET', userProperty: 'payload'});
 
@@ -197,13 +199,7 @@ router.post('/register', function(request, response, next){
 			user.nrtBrand = brandTokens.join("-").trim();
 		}
 
-		var tobaccoTypeMappings = {};
-		tobaccoTypeMappings["Nicotine Gum"] = "gum";
-		tobaccoTypeMappings["Nicotine Lozenges"] = "lozenge";
-		tobaccoTypeMappings["Nicotine Patches"] = "patch";
-		tobaccoTypeMappings["Electronic Cigarettes"] = "ecig";
-
-		var tobaccoType = tobaccoTypeMappings[user.quittingMethod];
+		var tobaccoType = nicotineTypeMappings[user.quittingMethod];
 
 		TobaccoPricing.findOne({
 			'tobaccoType': tobaccoType,
@@ -324,7 +320,7 @@ function handleLogin(user, response, next, info){
 				if (err) { return next(err); }
 
 				var hasFinancialGoal = doc.financialGoal;
-
+				
 				return response.json({token: user.generateJWT(),
 					id: user._id, 
 					dashboard: {
@@ -368,33 +364,23 @@ function calculateMoneySaved(user){
 	for (var i = 0; i < user.nicotineUsages.length; i++){
 		var usageInfo = user.nicotineUsages[i];
 
-		switch (usageInfo.nicotineType){
-			case 'cigarette':
-				actualCost += (usageInfo.quantityUsed / CIGARETTES_PER_PACK) * user.cigarettePrice;
-				break;
-			case 'smokeless':
-				actualCost += (usageInfo.quantityUsed / DIPS_PER_CAN) * user.dipPrice;
-				break;
-			case 'cigar':
-				actualCost += usageInfo.quantityUsed * user.cigarPrice;
-				break;
-			case 'patch':
-				actualCost += (usageInfo.quantityUsed / user.patchesPerCarton) * user.patchPrice;
-				break;
-			case 'gum':
-				actualCost += (usageInfo.quantityUsed / user.gumPiecesPerPack) * user.gumPrice;
-				break;
-			case 'lozenge':
-				actualCost += (usageInfo.quantityUsed / user.lozengesPerBottle) * user.lozengePrice;
-				break;
-			case 'ecig':
-				actualCost += usageInfo.quantityUsed * user.egicPrice;
-				break;
+		if (usageInfo.nicotineType === 'cigarette'){
+			var hotPotato = (usageInfo.quantityUsed / CIGARETTES_PER_PACK) * user.cigarettePrice;
+			actualCost += (usageInfo.quantityUsed / CIGARETTES_PER_PACK) * user.cigarettePrice;
 		}
-
+		else if (usageInfo.nicotineType === 'smokeless'){
+			var coldPotato = (usageInfo.quantityUsed / DIPS_PER_CAN) * user.dipPrice;
+			actualCost += (usageInfo.quantityUsed / DIPS_PER_CAN) * user.dipPrice;
+		}
+		else if (usageInfo.nicotineType === 'cigar'){
+			var colderPotato = usageInfo.quantityUsed * user.cigarPrice;
+			actualCost += usageInfo.quantityUsed * user.cigarPrice; 
+		}
+		else if (usageInfo.nicotineType in ['ecig', 'gum', 'patch', 'lozenge']){
+			actualCost += (usageInfo.quantityUsed / user.nrtPricing.amountPerUnit) * user.nrtPricing.averagePrice;
+		}
 	}
-
-	return grossCost - actualCost;
+	return (grossCost - actualCost);
 }	
 
 router.post('/dashboard', function(request, response, next){
@@ -414,14 +400,14 @@ router.post('/dashboard', function(request, response, next){
 	else {
 		passport.authenticate('local', function(err, user, info){
 			if (err) { return next(err); }
-			
+
 			return handleLogin(user, response, next, info);
 		})(request, response, next);
 	}
 });
 
 function authenticateUser(id, token, callback){
-	User.findById(id).exec(function(err, user){
+	User.findById(id).populate('nicotineUsages').exec(function(err, user){
 		if (err) { 
 			callback(err, null); 
 		}
@@ -429,16 +415,15 @@ function authenticateUser(id, token, callback){
 			callback("No user was found. Please log in again.", null);
 		}
 		else if (user.token !== token){
-			//console.log("userT: " + JSON.stringify(user));
-			//console.log("clientT: " + token);
 			callback("Invalid authentication token. Please log in again.", null);
 		}
-		else callback(null, user);
+		else {
+			callback(null, user);
+		}
 	});
 }
 
 router.post('/tobaccoCost', function(request, response, next){
-	console.log("back in black: " + JSON.stringify(request.body));
 	if (!request.body.id || !request.body.token){
 		return response.status(400).json({message: "Could not authenticate user. Please log in again."});
 	}
@@ -457,7 +442,6 @@ router.post('/tobaccoCost', function(request, response, next){
 
 		Dashboard.findById(user.dashboard).exec(function(error, dashboard){
 			if (error) { return next(error); }
-			//console.log("ruh roh: " + dashboard.dateQuit);
 
 			var userInfo = {
 				dateQuit: dashboard.dateQuit,
@@ -551,6 +535,25 @@ router.post('/updateTobaccoCost', function(request, response, next){
 					});
 				});
 			}
+			if (request.body.nicotineUsages){
+				for (var i = 0; i < request.body.nicotineUsages.length; i++){
+					var usageInfo = request.body.nicotineUsages[i];
+					usageInfo.nicotineType = nicotineTypeMappings[usageInfo.nicotineType];
+
+					NicotineUsage.create({
+						dateUsed: usageInfo.date,
+						nicotineType: usageInfo.nicotineType,
+						quantityUsed: usageInfo.quantity
+					}, function(err, usage){
+						if (err) { return next(err); }
+
+						user.nicotineUsages.push(usage);
+						user.save(function(err, user){
+							if (err) {return next(err);}
+						});
+					});
+				}
+			}
 
 
 			user.save(function(err){
@@ -565,17 +568,10 @@ router.post('/updateTobaccoCost', function(request, response, next){
 router.get('/nrtBrands', function(request, response, next){
 	var quittingMethod = request.query.quittingMethod;
 
-	var methodMappings = {};
-
-	methodMappings["Nicotine Gum"] = "gum";
-	methodMappings["Nicotine Lozenges"] = "lozenge";
-	methodMappings["Nicotine Patches"] = "patch";
-	methodMappings["Electronic Cigarettes"] = "ecig";
-
-	if (methodMappings[quittingMethod]){
+	if (nicotineTypeMappings[quittingMethod]){
 		TobaccoPricing.find({
 			state: 'UT',
-			tobaccoType: methodMappings[quittingMethod],
+			tobaccoType: nicotineTypeMappings[quittingMethod],
 		}).exec(function(err, tobaccoPricings){
 			var brandNames = [];
 			for (var i = 0; i < tobaccoPricings.length; i++){

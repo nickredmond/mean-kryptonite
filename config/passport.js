@@ -8,7 +8,7 @@ var TokenStrategy = require('passport-local-token').Strategy;
 passport.use(new LocalStrategy(
 	function(username, password, done){
 		var criteria = (username.indexOf('@') === -1) ? {username: username} : {email: username};
-		User.findOne(criteria, function(err, user){
+		User.findOne(criteria).populate('nicotineUsages').exec(function(err, user){
 			if (err) { return done(err); }
 			if(!user){
 				usernameError = (username.indexOf('@') === -1) ? 'Incorrect username' : 'Incorrect email address';
@@ -25,7 +25,6 @@ passport.use(new LocalStrategy(
 
 passport.use(new TokenStrategy(
 	function(token, done){
-		console.log("made it");
 		var criteria = {token: token};
 		User.findOne(criteria, function(err, user){
 			if (err) {return done(err);}

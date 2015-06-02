@@ -125,7 +125,8 @@ app.controller('HomeCtrl', [
 app.controller('DashboardCtrl', [
 	'$scope',
 	'auth',
-	function($scope, auth){
+	'dashboard',
+	function($scope, auth, dashboard){
 		$scope.dashboard = auth.dashboard;
 		$scope.dashboard.percentTowardGoal = 100 * ($scope.dashboard.moneySaved / $scope.dashboard.financialGoalCost);
 
@@ -375,6 +376,10 @@ app.controller('TobaccoCostCtrl', [
 				token: auth.getToken()
 			};
 
+			if ($scope.usageInfos[0].quantity !== 0){
+				updateData.nicotineUsages = $scope.usageInfos;
+			}
+
 			$http.post("/updateTobaccoCost", updateData).success(function(updateInfo){
 				$scope.errorMessage = null;
 				$scope.infoMessage = updateInfo.message;
@@ -383,6 +388,23 @@ app.controller('TobaccoCostCtrl', [
 				$scope.infoMessage = null;
 				$scope.errorMessage = err.message;
 			});
+		};
+
+		$scope.usageInfos = [
+			{
+				date: new Date(),
+				nicotineType: "Cigarettes",
+				quantity: 0
+			}
+		];
+
+		$scope.addUsageInfo = function(){
+			var addedInfo = {
+				date: new Date(),
+				nicotineType: "Cigarettes",
+				quantity: 0
+			}
+			$scope.usageInfos.push(addedInfo);
 		};
 	}
 ]);
@@ -599,7 +621,12 @@ app.config([
 		$stateProvider.state('dashboard', {
 			url: '/dashboard',
 			templateUrl: '/dashboard.html',
-			controller: 'DashboardCtrl'
+			controller: 'DashboardCtrl',
+			resolve: {
+				dashboard: ['auth', function(auth){
+					return auth.updateDashboard();
+				}]
+			}
 		});
 		$stateProvider.state('tobaccoCost', {
 			url: '/tobaccoCost',

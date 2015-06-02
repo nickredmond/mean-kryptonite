@@ -12,6 +12,7 @@ require('./models/Stories');
 require('./models/Dashboards');
 require('./models/TobaccoPricings');
 require('./models/Milestones'); 
+require('./models/NicotineUsages');
 require('./config/passport');
 
 var routes = require('./routes/index');

@@ -5,7 +5,7 @@ var tobaccoPricingSchema = new mongoose.Schema({
 	brandName: String,
 	state: String,
 	averagePrice: Number,
-	amountPerUnit: {type: Number, null: true}
+	amountPerUnit: {type: Number, default: 1}
 });
 
 mongoose.model('TobaccoPricing', tobaccoPricingSchema);
